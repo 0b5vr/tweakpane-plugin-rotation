@@ -84,6 +84,7 @@
   &_p {
     @extend %input;
 
+    cursor: move;
     height: 0;
     overflow: hidden;
     padding-bottom: 100%;
