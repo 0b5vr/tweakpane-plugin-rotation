@@ -1,0 +1,69 @@
+name: Publish gh-pages
+
+on:
+  push:
+    branches:
+      - release
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '16'
+        cache: 'yarn'
+    - name: Fetch Deps
+      run: yarn
+
+  build:
+    runs-on: ubuntu-latest
+    needs: fetch
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '16'
+        cache: 'yarn'
+    - name: Fetch Deps
+      run: yarn
+    - name: Build
+      run: yarn build
+    - name: Upload Builds
+      uses: actions/upload-artifact@v2
+      with:
+        name: build
+        path: |
+          dist/
+          types/
+          ts*/
+
+  pages:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/download-artifact@v2
+      with:
+        path: artifacts
+    - name: Setup Pages
+      run: |
+        mkdir pages
+
+        mv README.md pages
+        mv LICENSE pages
+        mv package.json pages
+        mv index.html pages
+
+        mv artifacts/build/* pages
+    - name: Publish gh-pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: pages
