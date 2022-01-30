@@ -158,6 +158,20 @@
     }
   }
 
+  &_arcr {
+    fill: none;
+    stroke: var(--in-fg);
+
+    &#{&}_hover {
+      stroke: #ebd510;
+    }
+
+    &#{&}_active {
+      stroke: #ebd510;
+      stroke-width: 2px;
+    }
+  }
+
   &_arcc {
     fill: none;
     stroke: transparent;

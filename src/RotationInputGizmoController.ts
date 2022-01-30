@@ -13,7 +13,7 @@ export class RotationInputGizmoController implements Controller<RotationInputGiz
   public readonly value: Value<Quaternion>;
   public readonly view: RotationInputGizmoView;
   public readonly viewProps: ViewProps;
-  private readonly mode_: Value<'free' | 'x' | 'y' | 'z'>;
+  private readonly mode_: Value<'free' | 'x' | 'y' | 'z' | 'r'>;
   private readonly ptHandler_: PointerHandler;
   private px_: number | null;
   private py_: number | null;
@@ -73,6 +73,10 @@ export class RotationInputGizmoController implements Controller<RotationInputGiz
     ptHandlerZArcF.emitter.on( 'down', () => this.mode_.rawValue = 'z' );
     ptHandlerZArcF.emitter.on( 'up', () => this.mode_.rawValue = 'free' );
 
+    const ptHandlerRArc = new PointerHandler( this.view.rArcElement as unknown as HTMLElement );
+    ptHandlerRArc.emitter.on( 'down', () => this.mode_.rawValue = 'r' );
+    ptHandlerRArc.emitter.on( 'up', () => this.mode_.rawValue = 'free' );
+
     this.px_ = null;
     this.py_ = null;
     this.angleState_ = null;
@@ -102,6 +106,27 @@ export class RotationInputGizmoController implements Controller<RotationInputGiz
 
       this.px_ = x;
       this.py_ = y;
+    } else if ( mode === 'r' ) {
+      const cx = d.bounds.width / 2.0;
+      const cy = d.bounds.height / 2.0;
+      const angle = Math.atan2( y - cy, x - cx );
+
+      if ( this.angleState_ == null ) {
+        const axis = new Vector3( 0.0, 0.0, 1.0 );
+
+        this.angleState_ = {
+          initialRotation: this.value.rawValue,
+          initialAngle: angle,
+          axis,
+          reverseAngle: true,
+        };
+      } else {
+        const { initialRotation, initialAngle, axis } = this.angleState_;
+
+        const angleDiff = -sanitizeAngle( angle - initialAngle );
+        const quat = Quaternion.fromAxisAngle( axis, angleDiff );
+        this.value.rawValue = quat.multiply( initialRotation );
+      }
     } else {
       const cx = d.bounds.width / 2.0;
       const cy = d.bounds.height / 2.0;

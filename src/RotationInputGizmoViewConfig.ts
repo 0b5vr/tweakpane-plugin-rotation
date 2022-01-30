@@ -3,7 +3,7 @@ import type { Quaternion } from './Quaternion';
 
 export interface RotationInputGizmoViewConfig {
   value: Value<Quaternion>;
-  mode: Value<'free' | 'x' | 'y' | 'z'>;
+  mode: Value<'free' | 'x' | 'y' | 'z' | 'r'>;
   viewProps: ViewProps;
   pickerLayout: PickerLayout;
 }

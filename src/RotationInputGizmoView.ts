@@ -17,12 +17,13 @@ const VEC3_XP80 = new Vector3( 0.8, 0.0, 0.0 );
 const VEC3_YP80 = new Vector3( 0.0, 0.8, 0.0 );
 const VEC3_ZP80 = new Vector3( 0.0, 0.0, 0.8 );
 const VEC3_ZN = new Vector3( 0.0, 0.0, -1.0 );
+const QUAT_IDENTITY = new Quaternion( 0.0, 0.0, 0.0, 1.0 );
 
 export class RotationInputGizmoView implements View {
   public readonly element: HTMLElement;
   public readonly padElement: HTMLDivElement;
   public readonly value: Value<Quaternion>;
-  private readonly mode_: Value<'free' | 'x' | 'y' | 'z'>;
+  private readonly mode_: Value<'free' | 'x' | 'y' | 'z' | 'r'>;
   private readonly svgElem_: Element;
   private readonly axesElem_: Element;
   private readonly projector_: PointProjector;
@@ -41,6 +42,8 @@ export class RotationInputGizmoView implements View {
   private readonly xArcFC_: SVGLineStrip;
   private readonly yArcFC_: SVGLineStrip;
   private readonly zArcFC_: SVGLineStrip;
+  private readonly rArc_: SVGLineStrip;
+  private readonly rArcC_: SVGLineStrip;
 
   public get xArcBElement(): SVGPathElement { return this.xArcBC_.element; }
   public get yArcBElement(): SVGPathElement { return this.yArcBC_.element; }
@@ -48,6 +51,7 @@ export class RotationInputGizmoView implements View {
   public get xArcFElement(): SVGPathElement { return this.xArcFC_.element; }
   public get yArcFElement(): SVGPathElement { return this.yArcFC_.element; }
   public get zArcFElement(): SVGPathElement { return this.zArcFC_.element; }
+  public get rArcElement(): SVGPathElement { return this.rArcC_.element; }
 
   public constructor( doc: Document, config: RotationInputGizmoViewConfig ) {
     this.onFoldableChange_ = this.onFoldableChange_.bind( this );
@@ -74,7 +78,8 @@ export class RotationInputGizmoView implements View {
     this.projector_ = new PointProjector();
     this.projector_.viewport = [ 0, 0, 136, 136 ];
 
-    const arcArray = createArcVerticesArray( 0.0, Math.PI, 32, 'x', 'y' );
+    const arcArray = createArcVerticesArray( 0.0, Math.PI, 33, 'x', 'y' );
+    const arcArrayR = createArcVerticesArray( 0.0, 2.0 * Math.PI, 65, 'x', 'y', 1.1 );
 
     // back arc
     this.xArcB_ = new SVGLineStrip( doc, arcArray, this.projector_ );
@@ -144,6 +149,17 @@ export class RotationInputGizmoView implements View {
     this.zArcFC_.element.classList.add( className( 'arcc' ) );
     this.svgElem_.appendChild( this.zArcFC_.element );
 
+    // roll arc
+    this.rArc_ = new SVGLineStrip( doc, arcArrayR, this.projector_ );
+    this.rArc_.element.classList.add( className( 'arcr' ) );
+    this.rArc_.setRotation( QUAT_IDENTITY );
+    this.svgElem_.appendChild( this.rArc_.element );
+
+    this.rArcC_ = new SVGLineStrip( doc, arcArrayR, this.projector_ );
+    this.rArcC_.element.classList.add( className( 'arcc' ) );
+    this.rArcC_.setRotation( QUAT_IDENTITY );
+    this.svgElem_.appendChild( this.rArcC_.element );
+
     // arc hover
     const onHoverXArc = (): void => {
       this.xArcB_.element.classList.add( className( 'arcx_hover' ) );
@@ -186,6 +202,16 @@ export class RotationInputGizmoView implements View {
     this.zArcBC_.element.addEventListener( 'mouseleave', onLeaveZArc );
     this.zArcFC_.element.addEventListener( 'mouseenter', onHoverZArc );
     this.zArcFC_.element.addEventListener( 'mouseleave', onLeaveZArc );
+
+    const onHoverRArc = (): void => {
+      this.rArc_.element.classList.add( className( 'arcr_hover' ) );
+    };
+    const onLeaveRArc = (): void => {
+      this.rArc_.element.classList.remove( className( 'arcr_hover' ) );
+    };
+
+    this.rArcC_.element.addEventListener( 'mouseenter', onHoverRArc );
+    this.rArcC_.element.addEventListener( 'mouseleave', onLeaveRArc );
 
     config.value.emitter.on( 'change', this.onValueChange_ );
     this.value = config.value;
@@ -256,6 +282,7 @@ export class RotationInputGizmoView implements View {
     const x = mode === 'x' ? 'add' : 'remove';
     const y = mode === 'y' ? 'add' : 'remove';
     const z = mode === 'z' ? 'add' : 'remove';
+    const r = mode === 'r' ? 'add' : 'remove';
 
     this.xArcB_.element.classList[ x ]( className( 'arcx_active' ) );
     this.yArcB_.element.classList[ y ]( className( 'arcy_active' ) );
@@ -263,5 +290,6 @@ export class RotationInputGizmoView implements View {
     this.xArcF_.element.classList[ x ]( className( 'arcx_active' ) );
     this.yArcF_.element.classList[ y ]( className( 'arcy_active' ) );
     this.zArcF_.element.classList[ z ]( className( 'arcz_active' ) );
+    this.rArc_.element.classList[ r ]( className( 'arcr_active' ) );
   }
 }
