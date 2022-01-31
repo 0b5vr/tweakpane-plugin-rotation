@@ -13,10 +13,13 @@ const VEC3_ZERO = new Vector3( 0.0, 0.0, 0.0 );
 const VEC3_XP = new Vector3( 1.0, 0.0, 0.0 );
 const VEC3_YP = new Vector3( 0.0, 1.0, 0.0 );
 const VEC3_ZP = new Vector3( 0.0, 0.0, 1.0 );
+const VEC3_ZN = new Vector3( 0.0, 0.0, -1.0 );
 const VEC3_XP70 = new Vector3( 0.7, 0.0, 0.0 );
 const VEC3_YP70 = new Vector3( 0.0, 0.7, 0.0 );
 const VEC3_ZP70 = new Vector3( 0.0, 0.0, 0.7 );
-const VEC3_ZN = new Vector3( 0.0, 0.0, -1.0 );
+const VEC3_XN70 = new Vector3( -0.7, 0.0, 0.0 );
+const VEC3_YN70 = new Vector3( 0.0, -0.7, 0.0 );
+const VEC3_ZN70 = new Vector3( 0.0, 0.0, -0.7 );
 const QUAT_IDENTITY = new Quaternion( 0.0, 0.0, 0.0, 1.0 );
 
 function createLabel( doc: Document, circleClass: string, labelText: string ): SVGGElement {
@@ -47,6 +50,9 @@ export class RotationInputGizmoView implements View {
   public readonly xLabel: SVGGElement;
   public readonly yLabel: SVGGElement;
   public readonly zLabel: SVGGElement;
+  public readonly xnLabel: SVGGElement;
+  public readonly ynLabel: SVGGElement;
+  public readonly znLabel: SVGGElement;
   private readonly mode_: Value<'free' | 'angle-x' | 'angle-y' | 'angle-z' | 'angle-r' | 'auto'>;
   private readonly svgElem_: Element;
   private readonly axesElem_: Element;
@@ -55,6 +61,9 @@ export class RotationInputGizmoView implements View {
   private readonly xAxis_: SVGLineStrip;
   private readonly yAxis_: SVGLineStrip;
   private readonly zAxis_: SVGLineStrip;
+  private readonly xnAxis_: SVGLineStrip;
+  private readonly ynAxis_: SVGLineStrip;
+  private readonly znAxis_: SVGLineStrip;
   private readonly xArcB_: SVGLineStrip;
   private readonly yArcB_: SVGLineStrip;
   private readonly zArcB_: SVGLineStrip;
@@ -149,6 +158,18 @@ export class RotationInputGizmoView implements View {
     this.zAxis_.element.classList.add( className( 'axisz' ) );
     this.axesElem_.appendChild( this.zAxis_.element );
 
+    this.xnAxis_ = new SVGLineStrip( doc, [ VEC3_ZERO, VEC3_XN70 ], this.projector_ );
+    this.xnAxis_.element.classList.add( className( 'axisn' ) );
+    this.axesElem_.appendChild( this.xnAxis_.element );
+
+    this.ynAxis_ = new SVGLineStrip( doc, [ VEC3_ZERO, VEC3_YN70 ], this.projector_ );
+    this.ynAxis_.element.classList.add( className( 'axisn' ) );
+    this.axesElem_.appendChild( this.ynAxis_.element );
+
+    this.znAxis_ = new SVGLineStrip( doc, [ VEC3_ZERO, VEC3_ZN70 ], this.projector_ );
+    this.znAxis_.element.classList.add( className( 'axisn' ) );
+    this.axesElem_.appendChild( this.znAxis_.element );
+
     // front arc
     this.xArcF_ = new SVGLineStrip( doc, arcArray, this.projector_ );
     this.xArcF_.element.classList.add( className( 'arcx' ) );
@@ -199,6 +220,15 @@ export class RotationInputGizmoView implements View {
 
     this.zLabel = createLabel( doc, 'labelcirclez', 'Z' );
     this.labelsElem_.appendChild( this.zLabel );
+
+    this.xnLabel = createLabel( doc, 'labelcirclen', '-X' );
+    this.labelsElem_.appendChild( this.xnLabel );
+
+    this.ynLabel = createLabel( doc, 'labelcirclen', '-Y' );
+    this.labelsElem_.appendChild( this.ynLabel );
+
+    this.znLabel = createLabel( doc, 'labelcirclen', '-Z' );
+    this.labelsElem_.appendChild( this.znLabel );
 
     // arc hover
     const onHoverXArc = (): void => {
@@ -273,16 +303,25 @@ export class RotationInputGizmoView implements View {
     this.xAxis_.setRotation( q );
     this.yAxis_.setRotation( q );
     this.zAxis_.setRotation( q );
+    this.xnAxis_.setRotation( q );
+    this.ynAxis_.setRotation( q );
+    this.znAxis_.setRotation( q );
 
     // """z-sort""" axes
     const xp = VEC3_XP.applyQuaternion( q );
     const yp = VEC3_YP.applyQuaternion( q );
     const zp = VEC3_ZP.applyQuaternion( q );
+    const xn = xp.negated;
+    const yn = yp.negated;
+    const zn = zp.negated;
 
     [
       { el: this.xAxis_.element, v: xp },
       { el: this.yAxis_.element, v: yp },
       { el: this.zAxis_.element, v: zp },
+      { el: this.xnAxis_.element, v: xn },
+      { el: this.ynAxis_.element, v: yn },
+      { el: this.znAxis_.element, v: zn },
     ]
       .map( ( { el, v } ) => {
         this.axesElem_.removeChild( el );
@@ -308,31 +347,30 @@ export class RotationInputGizmoView implements View {
     this.zArcFC_.setRotation( createArcRotation( zp, VEC3_ZP ) );
 
     // rotate labels
-    {
-      const [ x, y ] = this.projector_.project( VEC3_XP70.applyQuaternion( q ) );
-      this.xLabel.setAttributeNS( null, 'transform', `translate( ${ x }, ${ y } )` );
-    }
-
-    {
-      const [ x, y ] = this.projector_.project( VEC3_YP70.applyQuaternion( q ) );
-      this.yLabel.setAttributeNS( null, 'transform', `translate( ${ x }, ${ y } )` );
-    }
-
-    {
-      const [ x, y ] = this.projector_.project( VEC3_ZP70.applyQuaternion( q ) );
-      this.zLabel.setAttributeNS( null, 'transform', `translate( ${ x }, ${ y } )` );
-    }
+    [
+      { el: this.xLabel, v: VEC3_XP70 },
+      { el: this.yLabel, v: VEC3_YP70 },
+      { el: this.zLabel, v: VEC3_ZP70 },
+      { el: this.xnLabel, v: VEC3_XN70 },
+      { el: this.ynLabel, v: VEC3_YN70 },
+      { el: this.znLabel, v: VEC3_ZN70 },
+    ].forEach( ( { el, v } ) => {
+      const [ x, y ] = this.projector_.project( v.applyQuaternion( q ) );
+      el.setAttributeNS( null, 'transform', `translate( ${ x }, ${ y } )` );
+    } );
 
     // """z-sort""" labels
     [
       { el: this.xLabel, v: xp },
       { el: this.yLabel, v: yp },
       { el: this.zLabel, v: zp },
-    ]
-      .map( ( { el, v } ) => {
-        this.labelsElem_.removeChild( el );
-        return { el, v };
-      } )
+      { el: this.xnLabel, v: xn },
+      { el: this.ynLabel, v: yn },
+      { el: this.znLabel, v: zn },
+    ].map( ( { el, v } ) => {
+      this.labelsElem_.removeChild( el );
+      return { el, v };
+    } )
       .sort( ( a, b ) => a.v.z - b.v.z )
       .forEach( ( { el } ) => {
         this.labelsElem_.appendChild( el );

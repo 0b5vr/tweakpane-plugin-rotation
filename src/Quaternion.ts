@@ -138,12 +138,12 @@ export class Quaternion {
     // Ref: https://github.com/mrdoob/three.js/blob/master/src/math/Quaternion.js
     // Ref: http://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/slerp/
 
-    let a = this as Quaternion;
+    const a = this as Quaternion;
 
     let cosHalfTheta = a.w * b.w + a.x * b.x + a.y * b.y + a.z * b.z;
 
     if ( cosHalfTheta < 0.0 ) {
-      a = b.negated;
+      b = b.negated;
       cosHalfTheta = -cosHalfTheta;
     }
 

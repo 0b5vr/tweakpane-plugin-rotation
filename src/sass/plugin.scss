@@ -116,6 +116,11 @@
     stroke-width: 2px;
   }
 
+  &_axisn {
+    stroke: var(--in-fg);
+    stroke-width: 2px;
+  }
+
   &_arcx {
     fill: none;
     stroke: var(--in-fg);
@@ -185,7 +190,7 @@
     pointer-events: auto;
 
     &:hover {
-      fill: #970b29;
+      opacity: 0.7;
     }
   }
 
@@ -195,7 +200,7 @@
     pointer-events: auto;
 
     &:hover {
-      fill: #308f0b;
+      opacity: 0.7;
     }
   }
 
@@ -205,12 +210,24 @@
     pointer-events: auto;
 
     &:hover {
-      fill: #0a3b85;
+      opacity: 0.7;
+    }
+  }
+
+  &_labelcirclen {
+    fill: var(--in-fg);
+    cursor: pointer;
+    pointer-events: auto;
+
+    &:hover {
+      opacity: 0.7;
     }
   }
 
   &_labeltext {
     fill: var(--btn-fg);
+    stroke: var(--btn-fg);
+    stroke-width: 1px;
   }
 
   &_p:focus &_m {

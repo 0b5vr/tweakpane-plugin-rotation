@@ -14,6 +14,9 @@ const VEC3_ZP = new Vector3( 0.0, 0.0, 1.0 );
 const QUAT_IDENTITY = new Quaternion( 0.0, 0.0, 0.0, 1.0 );
 const QUAT_TOP = new Quaternion( INV_SQRT2, 0.0, 0.0, INV_SQRT2 );
 const QUAT_RIGHT = new Quaternion( 0.0, -INV_SQRT2, 0.0, INV_SQRT2 );
+const QUAT_BOTTOM = new Quaternion( -INV_SQRT2, 0.0, 0.0, INV_SQRT2 );
+const QUAT_LEFT = new Quaternion( 0.0, INV_SQRT2, 0.0, INV_SQRT2 );
+const QUAT_BACK = new Quaternion( 0.0, 1.0, 0.0, 0.0 );
 
 export class RotationInputGizmoController implements Controller<RotationInputGizmoView> {
   public readonly value: Value<Quaternion>;
@@ -83,14 +86,17 @@ export class RotationInputGizmoController implements Controller<RotationInputGiz
     ptHandlerRArc.emitter.on( 'down', () => this.changeModeIfNotAuto_( 'angle-r' ) );
     ptHandlerRArc.emitter.on( 'up', () => this.changeModeIfNotAuto_( 'free' ) );
 
-    const ptHandlerXLabel = new PointerHandler( this.view.xLabel as unknown as HTMLElement );
-    ptHandlerXLabel.emitter.on( 'down', () => this.autoRotate_( QUAT_RIGHT ) );
-
-    const ptHandlerYLabel = new PointerHandler( this.view.yLabel as unknown as HTMLElement );
-    ptHandlerYLabel.emitter.on( 'down', () => this.autoRotate_( QUAT_TOP ) );
-
-    const ptHandlerZLabel = new PointerHandler( this.view.zLabel as unknown as HTMLElement );
-    ptHandlerZLabel.emitter.on( 'down', () => this.autoRotate_( QUAT_IDENTITY ) );
+    [
+      { el: this.view.xLabel, q: QUAT_RIGHT },
+      { el: this.view.yLabel, q: QUAT_TOP },
+      { el: this.view.zLabel, q: QUAT_IDENTITY },
+      { el: this.view.xnLabel, q: QUAT_LEFT },
+      { el: this.view.ynLabel, q: QUAT_BOTTOM },
+      { el: this.view.znLabel, q: QUAT_BACK },
+    ].forEach( ( { el, q } ) => {
+      const ptHandler = new PointerHandler( el as unknown as HTMLElement );
+      ptHandler.emitter.on( 'down', () => this.autoRotate_( q ) );
+    } );
 
     this.px_ = null;
     this.py_ = null;
