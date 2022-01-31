@@ -179,6 +179,40 @@
     pointer-events: auto;
   }
 
+  &_labelcirclex {
+    fill: #eb103f;
+    cursor: pointer;
+    pointer-events: auto;
+
+    &:hover {
+      fill: #970b29;
+    }
+  }
+
+  &_labelcircley {
+    fill: #4eeb10;
+    cursor: pointer;
+    pointer-events: auto;
+
+    &:hover {
+      fill: #308f0b;
+    }
+  }
+
+  &_labelcirclez {
+    fill: #1068eb;
+    cursor: pointer;
+    pointer-events: auto;
+
+    &:hover {
+      fill: #0a3b85;
+    }
+  }
+
+  &_labeltext {
+    fill: var(--btn-fg);
+  }
+
   &_p:focus &_m {
     background-color: var(--in-fg);
     border-width: 0;

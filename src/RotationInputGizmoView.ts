@@ -13,19 +13,44 @@ const VEC3_ZERO = new Vector3( 0.0, 0.0, 0.0 );
 const VEC3_XP = new Vector3( 1.0, 0.0, 0.0 );
 const VEC3_YP = new Vector3( 0.0, 1.0, 0.0 );
 const VEC3_ZP = new Vector3( 0.0, 0.0, 1.0 );
-const VEC3_XP80 = new Vector3( 0.8, 0.0, 0.0 );
-const VEC3_YP80 = new Vector3( 0.0, 0.8, 0.0 );
-const VEC3_ZP80 = new Vector3( 0.0, 0.0, 0.8 );
+const VEC3_XP70 = new Vector3( 0.7, 0.0, 0.0 );
+const VEC3_YP70 = new Vector3( 0.0, 0.7, 0.0 );
+const VEC3_ZP70 = new Vector3( 0.0, 0.0, 0.7 );
 const VEC3_ZN = new Vector3( 0.0, 0.0, -1.0 );
 const QUAT_IDENTITY = new Quaternion( 0.0, 0.0, 0.0, 1.0 );
+
+function createLabel( doc: Document, circleClass: string, labelText: string ): SVGGElement {
+  const label = doc.createElementNS( SVG_NS, 'g' );
+
+  const circle = doc.createElementNS( SVG_NS, 'circle' );
+  circle.classList.add( className( circleClass ) );
+  circle.setAttributeNS( null, 'cx', '0' );
+  circle.setAttributeNS( null, 'cy', '0' );
+  circle.setAttributeNS( null, 'r', '8' );
+  label.appendChild( circle );
+
+  const text = doc.createElementNS( SVG_NS, 'text' );
+  text.classList.add( className( 'labeltext' ) );
+  text.setAttributeNS( null, 'y', '4' );
+  text.setAttributeNS( null, 'text-anchor', 'middle' );
+  text.setAttributeNS( null, 'font-size', '10' );
+  text.textContent = labelText;
+  label.appendChild( text );
+
+  return label;
+}
 
 export class RotationInputGizmoView implements View {
   public readonly element: HTMLElement;
   public readonly padElement: HTMLDivElement;
   public readonly value: Value<Quaternion>;
-  private readonly mode_: Value<'free' | 'x' | 'y' | 'z' | 'r'>;
+  public readonly xLabel: SVGGElement;
+  public readonly yLabel: SVGGElement;
+  public readonly zLabel: SVGGElement;
+  private readonly mode_: Value<'free' | 'angle-x' | 'angle-y' | 'angle-z' | 'angle-r' | 'auto'>;
   private readonly svgElem_: Element;
   private readonly axesElem_: Element;
+  private readonly labelsElem_: Element;
   private readonly projector_: PointProjector;
   private readonly xAxis_: SVGLineStrip;
   private readonly yAxis_: SVGLineStrip;
@@ -112,15 +137,15 @@ export class RotationInputGizmoView implements View {
     this.svgElem_.appendChild( axesElem );
     this.axesElem_ = axesElem;
 
-    this.xAxis_ = new SVGLineStrip( doc, [ VEC3_ZERO, VEC3_XP80 ], this.projector_ );
+    this.xAxis_ = new SVGLineStrip( doc, [ VEC3_ZERO, VEC3_XP70 ], this.projector_ );
     this.xAxis_.element.classList.add( className( 'axisx' ) );
     this.axesElem_.appendChild( this.xAxis_.element );
 
-    this.yAxis_ = new SVGLineStrip( doc, [ VEC3_ZERO, VEC3_YP80 ], this.projector_ );
+    this.yAxis_ = new SVGLineStrip( doc, [ VEC3_ZERO, VEC3_YP70 ], this.projector_ );
     this.yAxis_.element.classList.add( className( 'axisy' ) );
     this.axesElem_.appendChild( this.yAxis_.element );
 
-    this.zAxis_ = new SVGLineStrip( doc, [ VEC3_ZERO, VEC3_ZP80 ], this.projector_ );
+    this.zAxis_ = new SVGLineStrip( doc, [ VEC3_ZERO, VEC3_ZP70 ], this.projector_ );
     this.zAxis_.element.classList.add( className( 'axisz' ) );
     this.axesElem_.appendChild( this.zAxis_.element );
 
@@ -159,6 +184,21 @@ export class RotationInputGizmoView implements View {
     this.rArcC_.element.classList.add( className( 'arcc' ) );
     this.rArcC_.setRotation( QUAT_IDENTITY );
     this.svgElem_.appendChild( this.rArcC_.element );
+
+    // labels
+    const labelsElem = doc.createElementNS( SVG_NS, 'g' );
+    svgElem.classList.add( className( 'labels' ) );
+    this.svgElem_.appendChild( labelsElem );
+    this.labelsElem_ = labelsElem;
+
+    this.xLabel = createLabel( doc, 'labelcirclex', 'X' );
+    this.labelsElem_.appendChild( this.xLabel );
+
+    this.yLabel = createLabel( doc, 'labelcircley', 'Y' );
+    this.labelsElem_.appendChild( this.yLabel );
+
+    this.zLabel = createLabel( doc, 'labelcirclez', 'Z' );
+    this.labelsElem_.appendChild( this.zLabel );
 
     // arc hover
     const onHoverXArc = (): void => {
@@ -234,7 +274,7 @@ export class RotationInputGizmoView implements View {
     this.yAxis_.setRotation( q );
     this.zAxis_.setRotation( q );
 
-    // """z-sort"""
+    // """z-sort""" axes
     const xp = VEC3_XP.applyQuaternion( q );
     const yp = VEC3_YP.applyQuaternion( q );
     const zp = VEC3_ZP.applyQuaternion( q );
@@ -266,6 +306,37 @@ export class RotationInputGizmoView implements View {
     this.xArcFC_.setRotation( createArcRotation( xp, VEC3_ZP ) );
     this.yArcFC_.setRotation( createArcRotation( yp, VEC3_ZP ) );
     this.zArcFC_.setRotation( createArcRotation( zp, VEC3_ZP ) );
+
+    // rotate labels
+    {
+      const [ x, y ] = this.projector_.project( VEC3_XP70.applyQuaternion( q ) );
+      this.xLabel.setAttributeNS( null, 'transform', `translate( ${ x }, ${ y } )` );
+    }
+
+    {
+      const [ x, y ] = this.projector_.project( VEC3_YP70.applyQuaternion( q ) );
+      this.yLabel.setAttributeNS( null, 'transform', `translate( ${ x }, ${ y } )` );
+    }
+
+    {
+      const [ x, y ] = this.projector_.project( VEC3_ZP70.applyQuaternion( q ) );
+      this.zLabel.setAttributeNS( null, 'transform', `translate( ${ x }, ${ y } )` );
+    }
+
+    // """z-sort""" labels
+    [
+      { el: this.xLabel, v: xp },
+      { el: this.yLabel, v: yp },
+      { el: this.zLabel, v: zp },
+    ]
+      .map( ( { el, v } ) => {
+        this.labelsElem_.removeChild( el );
+        return { el, v };
+      } )
+      .sort( ( a, b ) => a.v.z - b.v.z )
+      .forEach( ( { el } ) => {
+        this.labelsElem_.appendChild( el );
+      } );
   }
 
   private onValueChange_(): void {
@@ -279,10 +350,10 @@ export class RotationInputGizmoView implements View {
   private onModeChange_(): void {
     const mode = this.mode_.rawValue;
 
-    const x = mode === 'x' ? 'add' : 'remove';
-    const y = mode === 'y' ? 'add' : 'remove';
-    const z = mode === 'z' ? 'add' : 'remove';
-    const r = mode === 'r' ? 'add' : 'remove';
+    const x = mode === 'angle-x' ? 'add' : 'remove';
+    const y = mode === 'angle-y' ? 'add' : 'remove';
+    const z = mode === 'angle-z' ? 'add' : 'remove';
+    const r = mode === 'angle-r' ? 'add' : 'remove';
 
     this.xArcB_.element.classList[ x ]( className( 'arcx_active' ) );
     this.yArcB_.element.classList[ y ]( className( 'arcy_active' ) );
