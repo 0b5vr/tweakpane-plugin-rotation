@@ -8,21 +8,22 @@ export function iikanjiEaseout( x: number ): number {
   if ( x <= 0.0 ) { return 0.0; }
   if ( x >= 1.0 ) { return 1.0; }
 
-  // a7 = 30, k = 0.08
-  const y = x * (
-    x * (
-      x * (
-        x * (
-          x * (
-            x * (
-              x * (
-                30
-              ) - 126
-            ) + 204
-          ) - 153
-        ) + 46
+  const xt = 1.0 - x;
+
+  const y = xt * (
+    xt * (
+      xt * (
+        xt * (
+          xt * (
+            xt * (
+              xt * (
+                -6
+              ) + 7
+            )
+          )
+        )
       )
     )
   );
-  return saturate( y );
+  return saturate( 1.0 - y );
 }
