@@ -134,10 +134,10 @@
     estree-walker "^1.0.1"
     picomatch "^2.2.2"
 
-"@tweakpane/core@^1.0.6":
-  version "1.0.6"
-  resolved "https://registry.yarnpkg.com/@tweakpane/core/-/core-1.0.6.tgz#cfdecd9612caab72f25abc60bfab9df2c1381f4c"
-  integrity sha512-Q5331dFAgGyLvQHzrUdK11FV5nX7UTucW2x9w/Nl0h2zd/qtxs9mtbYSU5xEGnj5mtuI095CMV3mcQjYpyTCkQ==
+"@tweakpane/core@^1.0.8":
+  version "1.0.8"
+  resolved "https://registry.yarnpkg.com/@tweakpane/core/-/core-1.0.8.tgz#428246eae841bbf32bed2f27e54311849fdd8501"
+  integrity sha512-q7BQrqM4NYiaSoErRgRY0EBxxC8AzsZJoz52K8SNJ/IfYu9lTzfFTwW7ouYqgElSOx+3ybXBcMlkCPZdOBZg6Q==
 
 "@types/estree@0.0.39":
   version "0.0.39"
@@ -2716,10 +2716,10 @@ tunnel-agent@^0.6.0:
   dependencies:
     safe-buffer "^5.0.1"
 
-tweakpane@^3.0.5:
-  version "3.0.5"
-  resolved "https://registry.yarnpkg.com/tweakpane/-/tweakpane-3.0.5.tgz#0dc76ac129b4b771dc6491558aec6e5516984946"
-  integrity sha512-HivFjOs510RbZSNgxv4x5LVFsHFN1ryfgpOp3n6wrgg1jLxbdlA/UTIbTLi/DYH7g76rGQqW/+IRmHPfjIujpQ==
+tweakpane@^3.0.7:
+  version "3.0.7"
+  resolved "https://registry.yarnpkg.com/tweakpane/-/tweakpane-3.0.7.tgz#a514a08aa4fafb542923d83e4be6915887dac7e5"
+  integrity sha512-rgxqoo6T10atYoKHVif6aYlAMIAlHJ84hi5LXqi6ZgVEPcmnzPI34C88y6HquarBY0ZKE/ZCXVaZm8NibhQRtA==
 
 tweetnacl@^0.14.3, tweetnacl@~0.14.0:
   version "0.14.5"
