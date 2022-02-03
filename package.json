@@ -20,7 +20,7 @@
     "assets": "run-s clean build assets:version assets:zip",
     "assets:version": "node scripts/assets-append-version.js",
     "assets:zip": "zip -x \"*types*\" -j -r $(cat package.json | npx json name)-$(cat package.json | npx json version).zip dist",
-    "clean": "rimraf dist *.tgz *.zip",
+    "clean": "rimraf dist/ types/ ts*/",
     "build": "run-p build:*",
     "build:dev": "rollup --config rollup.config.js",
     "build:prod": "rollup --config rollup.config.js --environment BUILD:production",
