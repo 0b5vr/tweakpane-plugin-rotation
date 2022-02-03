@@ -16,6 +16,7 @@
   ],
   "scripts": {
     "prepare": "run-s clean build",
+    "version": "yarn build",
     "start": "npm run watch",
     "assets": "run-s clean build assets:version assets:zip",
     "assets:version": "node scripts/assets-append-version.js",
