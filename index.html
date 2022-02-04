@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>@0b5vr/tweakpane-plugin-rotation</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css?family=Roboto+Mono:400,500,700');
+
+      .CodeMirror {
+        width: 600px;
+        height: 600px;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://unpkg.com/tweakpane@3.0.7/dist/tweakpane.js"></script>
+    <script src="./dist/tweakpane-plugin-rotation.js"></script>
+    <script>
+      const pane = new Tweakpane.Pane();
+
+      pane.registerPlugin( TweakpaneRotationInputPlugin );
+
+      const params = {
+        rotation: { x: 0.0, y: 0.0, z: 0.0, w: 1.0 },
+        rotation2: { x: 0.0, y: 0.0, z: 0.0, w: 1.0 },
+      };
+
+      const rotation = pane.addInput( params, 'rotation', {
+        view: 'rotation',
+        label: 'rotation',
+        rotationMode: 'quaternion',
+      } );
+
+      const rotation2 = pane.addInput( params, 'rotation2', {
+        view: 'rotation',
+        label: 'rotation2',
+        rotationMode: 'quaternion',
+        picker: 'inline',
+        expanded: true,
+      } );
+    </script>
+  </body>
+</html>
