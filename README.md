@@ -14,15 +14,31 @@ Rotation input plugin for Tweakpane
 <script>
   const pane = new Tweakpane.Pane();
 
-  pane.registerPlugin( TweakpaneRotationInputPlugin );
+  pane.registerPlugin(TweakpaneRotationInputPlugin);
 
   const params = {
-    rotation: { x: 0.0, y: 0.0, z: 0.0, w: 1.0 },
-  };
+    euler: { x: 0.0, y: 0.0, z: 0.0 },
+    quat: { x: 0.0, y: 0.0, z: 0.0, w: 1.0 },
+  }
 
-  const rotation = pane.addInput( params, 'rotation', {
+  // euler
+  const guiEuler = pane.addInput(params, 'euler', {
     view: 'rotation',
-    label: 'rotation',
-  } );
+    rotationMode: 'euler',
+    order: 'XYZ', // Extrinsic rotation order. optional, 'XYZ' by default
+    unit: 'deg', // or 'rad' or 'turn'. optional, 'rad' by default
+  });
+
+  // quaternion
+  const guiQuat = pane.addInput(params, 'quat', {
+    view: 'rotation',
+    rotationMode: 'quaternion', // optional, 'quaternion' by default
+    picker: 'inline', // or 'popup'. optional, 'popup' by default
+    expanded: true, // optional, false by default
+  });
+
+  guiEuler.on('change', ({ value }) => {
+    console.log(value); // do something
+  });
 </script>
 ```
