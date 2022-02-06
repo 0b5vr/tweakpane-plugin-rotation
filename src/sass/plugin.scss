@@ -60,8 +60,14 @@
 
   &_arc {
     fill: none;
-    stroke: var(--btn-fg);
-    stroke-width: 1.5px;
+    stroke: var(--btn-bg);
+    stroke-width: 1px;
+  }
+
+  &_arcr {
+    fill: var(--btn-fg);
+    stroke: var(--btn-bg);
+    stroke-width: 1px;
   }
 }
 
