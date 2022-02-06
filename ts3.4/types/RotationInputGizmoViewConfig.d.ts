@@ -1,7 +1,7 @@
 import { PickerLayout, Value, ViewProps } from '@tweakpane/core';
-import { Quaternion } from './Quaternion';
+import { Rotation } from './Rotation';
 export interface RotationInputGizmoViewConfig {
-    value: Value<Quaternion>;
+    value: Value<Rotation>;
     mode: Value<'free' | 'angle-x' | 'angle-y' | 'angle-z' | 'angle-r' | 'auto'>;
     viewProps: ViewProps;
     pickerLayout: PickerLayout;

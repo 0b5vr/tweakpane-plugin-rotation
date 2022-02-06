@@ -1,11 +1,16 @@
 import { Value, View } from '@tweakpane/core';
-import { Quaternion } from './Quaternion';
+import { Rotation } from './Rotation';
 import { RotationInputSwatchViewConfig } from './RotationInputSwatchViewConfig';
 export declare class RotationInputSwatchView implements View {
     readonly element: HTMLElement;
-    readonly value: Value<Quaternion>;
+    readonly value: Value<Rotation>;
     readonly buttonElement: HTMLButtonElement;
-    private swatchElem_;
+    private readonly svgElem_;
+    private readonly projector_;
+    private readonly xArc_;
+    private readonly yArc_;
+    private readonly zArc_;
+    private readonly rArc_;
     constructor(doc: Document, config: RotationInputSwatchViewConfig);
     private update_;
     private onValueChange_;

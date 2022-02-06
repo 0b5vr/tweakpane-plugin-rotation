@@ -1,10 +1,10 @@
 import { Value, View } from '@tweakpane/core';
-import { Quaternion } from './Quaternion';
+import { Rotation } from './Rotation';
 import { RotationInputGizmoViewConfig } from './RotationInputGizmoViewConfig';
 export declare class RotationInputGizmoView implements View {
     readonly element: HTMLElement;
     readonly padElement: HTMLDivElement;
-    readonly value: Value<Quaternion>;
+    readonly value: Value<Rotation>;
     readonly xLabel: SVGGElement;
     readonly yLabel: SVGGElement;
     readonly zLabel: SVGGElement;

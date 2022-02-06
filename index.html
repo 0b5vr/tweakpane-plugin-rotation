@@ -6,14 +6,112 @@
     <style>
       @import url('https://fonts.googleapis.com/css?family=Roboto+Mono:400,500,700');
 
+      body {
+        background: #000;
+        font-family: 'Roboto Mono', sans-serif;
+        color: #ffffff;
+      }
+
+      #canvas {
+        position: fixed;
+        left: 0;
+        top: 0;
+      }
+
+      main {
+        position: relative;
+        max-width: 800px;
+        margin: 64px auto 64px;
+      }
+
+      a {
+        color: #88a3dd;
+      }
+
+      #title-wrap {
+        display: inline-block;
+        perspective: 24em;
+      }
+
+      #title {
+        display: flex;
+        flex-direction: column;
+        transform-origin: center;
+        perspective-origin: center;
+      }
+
+      #namespace {
+        font-size: 0.7em;
+      }
+
+      #code-example {
+        display: none;
+      }
+
       .CodeMirror {
-        width: 600px;
-        height: 600px;
+        height: 38em !important;
+        font-family: 'Roboto Mono', monospace !important;
+        font-size: 12px;
       }
     </style>
+    <link rel="stylesheet" href="https://www.unpkg.com/codemirror@5.62.3/lib/codemirror.css" />
+    <link rel="stylesheet" href="https://www.unpkg.com/codemirror@5.62.3/theme/material-darker.css" />
   </head>
   <body>
-    <script src="https://unpkg.com/tweakpane@3.0.7/dist/tweakpane.js"></script>
+    <canvas id="canvas"></canvas>
+
+    <main>
+      <span id="title-wrap">
+        <h1 id="title"><span id="namespace">@0b5vr/</span>tweakpane-plugin-rotation</h1>
+      </span>
+
+      <p>
+        Rotation input plugin for Tweakpane
+      </p>
+
+      <p>
+        <a href="https://www.npmjs.com/package/@0b5vr/tweakpane-plugin-rotation" target="_blank" rel="noreferrer">
+          <img alt="npm" src="https://img.shields.io/npm/v/@0b5vr/tweakpane-plugin-rotation?logo=npm&style=flat-square" />
+        </a>
+      </p>
+
+      <textarea id="code-example">pane.registerPlugin(TweakpaneRotationInputPlugin);
+
+const params = {
+  euler: { x: 0.0, y: 0.0, z: 0.0 },
+  quat: { x: 0.0, y: 0.0, z: 0.0, w: 1.0 },
+}
+
+// euler
+const guiEuler = pane.addInput(params, 'euler', {
+  view: 'rotation',
+  rotationMode: 'euler',
+  order: 'XYZ', // Extrinsic rotation order. optional, 'XYZ' by default
+  unit: 'deg', // or 'rad' or 'turn'. optional, 'rad' by default
+});
+
+// quaternion
+const guiQuat = pane.addInput(params, 'quat', {
+  view: 'rotation',
+  rotationMode: 'quaternion', // optional, 'quaternion' by default
+  picker: 'inline', // or 'popup'. optional, 'popup' by default
+  expanded: true, // optional, false by default
+});
+
+guiEuler.on('change', ({ value }) => {
+  console.log(value); // do something
+});
+</textarea>
+
+      <p>
+        <a href="https://github.com/0b5vr/tweakpane-plugin-rotation" target="_blank" rel="noreferrer">GitHub</a>
+      </p>
+    </main>
+
+    <script src="https://unpkg.com/three@0.137.0"></script>
+    <script src="https://unpkg.com/tweakpane@3.0.7"></script>
+    <script src="https://www.unpkg.com/codemirror@5.62.3/lib/codemirror.js"></script>
+    <script src="https://www.unpkg.com/codemirror@5.62.3/mode/javascript/javascript.js"></script>
     <script src="./dist/tweakpane-plugin-rotation.js"></script>
     <script>
       const pane = new Tweakpane.Pane();
@@ -21,22 +119,80 @@
       pane.registerPlugin( TweakpaneRotationInputPlugin );
 
       const params = {
-        rotation: { x: 0.0, y: 0.0, z: 0.0, w: 1.0 },
-        rotation2: { x: 0.0, y: 0.0, z: 0.0, w: 1.0 },
+        title: { x: 0.0, y: 0.0, z: 0.0 },
+        sphere: { x: 0.24, y: 0.13, z: -0.23, w: 0.93 },
       };
 
-      const rotation = pane.addInput( params, 'rotation', {
+      const guiTitle = pane.addInput( params, 'title', {
         view: 'rotation',
-        label: 'rotation',
-        rotationMode: 'quaternion',
+        rotationMode: 'euler',
+        unit: 'deg',
       } );
 
-      const rotation2 = pane.addInput( params, 'rotation2', {
+      const guiSphere = pane.addInput( params, 'sphere', {
         view: 'rotation',
-        label: 'rotation2',
-        rotationMode: 'quaternion',
         picker: 'inline',
         expanded: true,
+      } );
+
+      // -- css ------------------------------------------------------------------------------------
+      const title = document.getElementById( 'title' );
+
+      guiTitle.on( 'change', ( { value } ) => {
+        title.style.transform = `rotateZ(${ -value.z }deg) rotateY(${ value.y }deg) rotateX(${ -value.x }deg)`;
+      } );
+
+      // -- three ----------------------------------------------------------------------------------
+      let width = window.innerWidth;
+      let height = window.innerHeight;
+
+      const canvas = document.getElementById( 'canvas' );
+      canvas.width = width;
+      canvas.height = height;
+
+      const renderer = new THREE.WebGLRenderer( { canvas, antialias: true } );
+
+      const camera = new THREE.PerspectiveCamera( 60.0, width / height, 0.01, 20.0 );
+      camera.position.z = 9.0;
+
+      const scene = new THREE.Scene();
+
+      const sphere = new THREE.Mesh(
+        new THREE.IcosahedronGeometry( 10.0, 5 ),
+        new THREE.MeshBasicMaterial( {
+          color: 0x222222,
+          transparent: true,
+          wireframe: true,
+          side: THREE.BackSide,
+        } ),
+      );
+      sphere.quaternion.set( 0.24, 0.13, -0.23, 0.93 );
+      scene.add( sphere );
+
+      renderer.render( scene, camera );
+
+      guiSphere.on( 'change', ( { value } ) => {
+        sphere.quaternion.set( value.x, value.y, value.z, value.w );
+
+        renderer.render( scene, camera );
+      } );
+
+      window.addEventListener( 'resize', () => {
+        width = window.innerWidth;
+        height = window.innerHeight;
+
+        renderer.setSize( width, height );
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+
+        renderer.render( scene, camera );
+      } );
+
+      // -- code-example ---------------------------------------------------------------------------
+      const codeExample = document.getElementById( 'code-example' );
+      CodeMirror.fromTextArea( codeExample, {
+        readOnly: true,
+        theme: 'material-darker',
       } );
     </script>
   </body>

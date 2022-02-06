@@ -1,12 +1,14 @@
 import { BaseInputParams, PickerLayout, PointDimensionParams } from '@tweakpane/core';
-import { RotationInputRotationMode } from './RotationInputRotationMode';
-export interface RotationInputPluginParams extends BaseInputParams {
+import { EulerOrder } from './EulerOrder';
+import { EulerUnit } from './EulerUnit';
+export interface RotationInputPluginEulerParams extends BaseInputParams {
     view: 'rotation';
     expanded?: boolean;
     picker?: PickerLayout;
-    rotationMode?: RotationInputRotationMode;
+    rotationMode: 'euler';
+    order?: EulerOrder;
+    unit?: EulerUnit;
     x?: PointDimensionParams;
     y?: PointDimensionParams;
     z?: PointDimensionParams;
-    w?: PointDimensionParams;
 }

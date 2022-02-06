@@ -1,9 +1,9 @@
 import { Controller, Value, ViewProps } from '@tweakpane/core';
-import { Quaternion } from './Quaternion';
+import { Rotation } from './Rotation';
 import { RotationInputGizmoView } from './RotationInputGizmoView';
 import type { RotationInputGizmoControllerConfig } from './RotationInputGizmoControllerConfig';
 export declare class RotationInputGizmoController implements Controller<RotationInputGizmoView> {
-    readonly value: Value<Quaternion>;
+    readonly value: Value<Rotation>;
     readonly view: RotationInputGizmoView;
     readonly viewProps: ViewProps;
     private readonly mode_;

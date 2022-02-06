@@ -453,23 +453,6 @@
             }, value);
         }
     }
-    function findConstraint(c, constraintClass) {
-        if (c instanceof constraintClass) {
-            return c;
-        }
-        if (c instanceof CompositeConstraint) {
-            const result = c.constraints.reduce((tmpResult, sc) => {
-                if (tmpResult) {
-                    return tmpResult;
-                }
-                return sc instanceof constraintClass ? sc : null;
-            }, null);
-            if (result) {
-                return result;
-            }
-        }
-        return null;
-    }
 
     class RangeConstraint {
         constructor(config) {
@@ -943,6 +926,14 @@
             upKey: ev.key === 'ArrowUp',
         };
     }
+    function getHorizontalStepKeys(ev) {
+        return {
+            altKey: ev.altKey,
+            downKey: ev.key === 'ArrowLeft',
+            shiftKey: ev.shiftKey,
+            upKey: ev.key === 'ArrowRight',
+        };
+    }
     function isVerticalArrowKey(key) {
         return key === 'ArrowUp' || key === 'ArrowDown';
     }
@@ -1077,11 +1068,6 @@
         }
     }
 
-    function getDecimalDigits(value) {
-        const text = String(value.toFixed(10));
-        const frac = text.split('.')[1];
-        return frac.replace(/0+$/, '').length;
-    }
     function constrainRange(value, min, max) {
         return Math.min(Math.max(value, min), max);
     }
@@ -1264,30 +1250,6 @@
             step: p.optional.number,
         })(value).value;
     }
-    function findStep(constraint) {
-        const c = constraint ? findConstraint(constraint, StepConstraint) : null;
-        if (!c) {
-            return null;
-        }
-        return c.step;
-    }
-    function getSuitableDecimalDigits(constraint, rawValue) {
-        const sc = constraint && findConstraint(constraint, StepConstraint);
-        if (sc) {
-            return getDecimalDigits(sc.step);
-        }
-        return Math.max(getDecimalDigits(rawValue), 2);
-    }
-    function getBaseStep(constraint) {
-        const step = findStep(constraint);
-        return step !== null && step !== void 0 ? step : 1;
-    }
-    function getSuitableDraggingScale(constraint, rawValue) {
-        var _a;
-        const sc = constraint && findConstraint(constraint, StepConstraint);
-        const base = Math.abs((_a = sc === null || sc === void 0 ? void 0 : sc.step) !== null && _a !== void 0 ? _a : rawValue);
-        return base === 0 ? 0.1 : Math.pow(10, Math.floor(Math.log10(base)) - 1);
-    }
 
     class PointNdConstraint {
         constructor(config) {
@@ -1354,8 +1316,110 @@
         }
     }
 
-    class Quaternion {
+    class Rotation {
+        multiply(b) {
+            return this.format(this.quat.multiply(b.quat));
+        }
+        premultiply(a) {
+            return this.format(a.multiply(this));
+        }
+        slerp(b, t) {
+            return this.format(this.quat.slerp(b.quat, t));
+        }
+    }
+
+    function clamp(x, l, h) {
+        return Math.min(Math.max(x, l), h);
+    }
+
+    function lofi(x, d) {
+        return Math.floor(x / d) * d;
+    }
+
+    function mod(x, d) {
+        return x - lofi(x, d);
+    }
+
+    function sanitizeAngle(angle) {
+        return mod(angle + Math.PI, Math.PI * 2.0) - Math.PI;
+    }
+
+    class Euler extends Rotation {
+        constructor(x, y, z, order, unit) {
+            super();
+            this.x = x !== null && x !== void 0 ? x : 0.0;
+            this.y = y !== null && y !== void 0 ? y : 0.0;
+            this.z = z !== null && z !== void 0 ? z : 0.0;
+            this.order = order !== null && order !== void 0 ? order : 'XYZ';
+            this.unit = unit !== null && unit !== void 0 ? unit : 'rad';
+        }
+        static fromQuaternion(quat, order, unit) {
+            const m = quat.toMat3();
+            const [i, j, k, sign] = order === 'XYZ' ? [0, 1, 2, 1] :
+                order === 'XZY' ? [0, 2, 1, -1] :
+                    order === 'YXZ' ? [1, 0, 2, -1] :
+                        order === 'YZX' ? [1, 2, 0, 1] :
+                            order === 'ZXY' ? [2, 0, 1, 1] :
+                                [2, 1, 0, -1];
+            const result = [0.0, 0.0, 0.0];
+            const c = m[k + i * 3];
+            result[j] = -sign * Math.asin(clamp(c, -1.0, 1.0));
+            if (Math.abs(c) < 0.999999) {
+                result[i] = sign * Math.atan2(m[k + j * 3], m[k * 4]);
+                result[k] = sign * Math.atan2(m[j + i * 3], m[i * 4]);
+            }
+            else {
+                // "y is 90deg" cases
+                result[i] = sign * Math.atan2(-m[j + k * 3], m[j * 4]);
+            }
+            if (Math.abs(result[i]) + Math.abs(result[k]) > Math.PI) {
+                // "two big revolutions" cases
+                result[i] = sanitizeAngle(result[i] + Math.PI);
+                result[j] = sanitizeAngle(Math.PI - result[j]);
+                result[k] = sanitizeAngle(result[k] + Math.PI);
+            }
+            return new Euler(...result, order).reunit(unit);
+        }
+        get quat() {
+            return Quaternion.fromEuler(this);
+        }
+        getComponents() {
+            return [this.x, this.y, this.z];
+        }
+        toEuler(order, unit) {
+            return this.reorder(order).reunit(unit);
+        }
+        format(r) {
+            if (r instanceof Euler) {
+                return r.reorder(this.order);
+            }
+            return r.toEuler(this.order, this.unit);
+        }
+        reorder(order) {
+            if (order === this.order) {
+                return this;
+            }
+            return this.quat.toEuler(order, this.unit);
+        }
+        reunit(unit) {
+            const prev2Rad = {
+                deg: Math.PI / 180.0,
+                rad: 1.0,
+                turn: 2.0 * Math.PI,
+            }[this.unit];
+            const rad2Next = {
+                deg: 180.0 / Math.PI,
+                rad: 1.0,
+                turn: 0.5 / Math.PI,
+            }[unit];
+            const prev2Next = prev2Rad * rad2Next;
+            return new Euler(prev2Next * this.x, prev2Next * this.y, prev2Next * this.z, this.order, unit);
+        }
+    }
+
+    class Quaternion extends Rotation {
         constructor(x, y, z, w) {
+            super();
             this.x = x !== null && x !== void 0 ? x : 0.0;
             this.y = y !== null && y !== void 0 ? y : 0.0;
             this.z = z !== null && z !== void 0 ? z : 0.0;
@@ -1365,6 +1429,35 @@
             const halfAngle = angle / 2.0;
             const sinHalfAngle = Math.sin(halfAngle);
             return new Quaternion(axis.x * sinHalfAngle, axis.y * sinHalfAngle, axis.z * sinHalfAngle, Math.cos(halfAngle));
+        }
+        static fromEuler(eulerr) {
+            const euler = eulerr.reunit('rad');
+            const [i, j, k, sign] = euler.order === 'XYZ' ? [0, 1, 2, 1] :
+                euler.order === 'XZY' ? [0, 2, 1, -1] :
+                    euler.order === 'YXZ' ? [1, 0, 2, -1] :
+                        euler.order === 'YZX' ? [1, 2, 0, 1] :
+                            euler.order === 'ZXY' ? [2, 0, 1, 1] :
+                                [2, 1, 0, -1];
+            const compo = euler.getComponents();
+            const ti = 0.5 * compo[i];
+            const tj = 0.5 * sign * compo[j];
+            const tk = 0.5 * compo[k];
+            const ci = Math.cos(ti);
+            const cj = Math.cos(tj);
+            const ck = Math.cos(tk);
+            const si = Math.sin(ti);
+            const sj = Math.sin(tj);
+            const sk = Math.sin(tk);
+            const result = [
+                0.0,
+                0.0,
+                0.0,
+                ck * cj * ci + sk * sj * si,
+            ];
+            result[i] = ck * cj * si - sk * sj * ci;
+            result[j] = sign * (ck * sj * ci + sk * cj * si);
+            result[k] = sk * cj * ci - ck * sj * si;
+            return new Quaternion(...result);
         }
         static lookRotation(look, up) {
             const { normal, tangent, binormal } = look.orthoNormalize(up);
@@ -1397,8 +1490,14 @@
                 return new Quaternion((m13 + m31) / s, (m23 + m32) / s, 0.25 * s, (m21 - m12) / s);
             }
         }
+        get quat() {
+            return this;
+        }
         getComponents() {
             return [this.x, this.y, this.z, this.w];
+        }
+        toEuler(order, unit) {
+            return Euler.fromQuaternion(this, order, unit);
         }
         get lengthSq() {
             return this.x * this.x + this.y * this.y + this.z * this.z + this.w * this.w;
@@ -1419,10 +1518,15 @@
         get ban360s() {
             return (this.w < 0.0) ? this.negated : this;
         }
-        multiply(q) {
-            return new Quaternion(this.w * q.x + this.x * q.w + this.y * q.z - this.z * q.y, this.w * q.y - this.x * q.z + this.y * q.w + this.z * q.x, this.w * q.z + this.x * q.y - this.y * q.x + this.z * q.w, this.w * q.w - this.x * q.x - this.y * q.y - this.z * q.z);
+        multiply(br) {
+            const b = br.quat;
+            return new Quaternion(this.w * b.x + this.x * b.w + this.y * b.z - this.z * b.y, this.w * b.y - this.x * b.z + this.y * b.w + this.z * b.x, this.w * b.z + this.x * b.y - this.y * b.x + this.z * b.w, this.w * b.w - this.x * b.x - this.y * b.y - this.z * b.z);
         }
-        slerp(b, t) {
+        format(r) {
+            return r.quat;
+        }
+        slerp(br, t) {
+            let b = br.quat;
             if (t === 0.0) {
                 return this;
             }
@@ -1431,7 +1535,8 @@
             }
             // Ref: https://github.com/mrdoob/three.js/blob/master/src/math/Quaternion.js
             // Ref: http://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/slerp/
-            const a = this;
+            const a = this.ban360s;
+            b = b.ban360s;
             let cosHalfTheta = a.w * b.w + a.x * b.x + a.y * b.y + a.z * b.z;
             if (cosHalfTheta < 0.0) {
                 b = b.negated;
@@ -1453,6 +1558,14 @@
             const ratioA = Math.sin((1.0 - t) * halfTheta) / sinHalfTheta;
             const ratioB = Math.sin(t * halfTheta) / sinHalfTheta;
             return new Quaternion(a.x * ratioA + b.x * ratioB, a.y * ratioA + b.y * ratioB, a.z * ratioA + b.z * ratioB, a.w * ratioA + b.w * ratioB);
+        }
+        toMat3() {
+            const { x, y, z, w } = this;
+            return [
+                1.0 - 2.0 * y * y - 2.0 * z * z, 2.0 * x * y + 2.0 * z * w, 2.0 * x * z - 2.0 * y * w,
+                2.0 * x * y - 2.0 * z * w, 1.0 - 2.0 * x * x - 2.0 * z * z, 2.0 * y * z + 2.0 * x * w,
+                2.0 * x * z + 2.0 * y * w, 2.0 * y * z - 2.0 * x * w, 1.0 - 2.0 * x * x - 2.0 * y * y,
+            ];
         }
     }
 
@@ -1592,9 +1705,9 @@
 
     const className$2 = ClassName('rotationgizmo');
     const VEC3_ZERO = new Vector3(0.0, 0.0, 0.0);
-    const VEC3_XP$1 = new Vector3(1.0, 0.0, 0.0);
-    const VEC3_YP$1 = new Vector3(0.0, 1.0, 0.0);
-    const VEC3_ZP$1 = new Vector3(0.0, 0.0, 1.0);
+    const VEC3_XP$2 = new Vector3(1.0, 0.0, 0.0);
+    const VEC3_YP$2 = new Vector3(0.0, 1.0, 0.0);
+    const VEC3_ZP$2 = new Vector3(0.0, 0.0, 1.0);
     const VEC3_ZN = new Vector3(0.0, 0.0, -1.0);
     const VEC3_XP70 = new Vector3(0.7, 0.0, 0.0);
     const VEC3_YP70 = new Vector3(0.0, 0.7, 0.0);
@@ -1602,7 +1715,7 @@
     const VEC3_XN70 = new Vector3(-0.7, 0.0, 0.0);
     const VEC3_YN70 = new Vector3(0.0, -0.7, 0.0);
     const VEC3_ZN70 = new Vector3(0.0, 0.0, -0.7);
-    const QUAT_IDENTITY$1 = new Quaternion(0.0, 0.0, 0.0, 1.0);
+    const QUAT_IDENTITY$2 = new Quaternion(0.0, 0.0, 0.0, 1.0);
     function createLabel(doc, circleClass, labelText) {
         const label = doc.createElementNS(SVG_NS, 'g');
         const circle = doc.createElementNS(SVG_NS, 'circle');
@@ -1707,11 +1820,11 @@
             // roll arc
             this.rArc_ = new SVGLineStrip(doc, arcArrayR, this.projector_);
             this.rArc_.element.classList.add(className$2('arcr'));
-            this.rArc_.setRotation(QUAT_IDENTITY$1);
+            this.rArc_.setRotation(QUAT_IDENTITY$2);
             this.svgElem_.appendChild(this.rArc_.element);
             this.rArcC_ = new SVGLineStrip(doc, arcArrayR, this.projector_);
             this.rArcC_.element.classList.add(className$2('arcc'));
-            this.rArcC_.setRotation(QUAT_IDENTITY$1);
+            this.rArcC_.setRotation(QUAT_IDENTITY$2);
             this.svgElem_.appendChild(this.rArcC_.element);
             // labels
             const labelsElem = doc.createElementNS(SVG_NS, 'g');
@@ -1792,7 +1905,7 @@
             return [this.padElement];
         }
         update_() {
-            const q = this.value.rawValue.normalized;
+            const q = this.value.rawValue.quat.normalized;
             // rotate axes
             this.xAxis_.setRotation(q);
             this.yAxis_.setRotation(q);
@@ -1801,9 +1914,9 @@
             this.ynAxis_.setRotation(q);
             this.znAxis_.setRotation(q);
             // """z-sort""" axes
-            const xp = VEC3_XP$1.applyQuaternion(q);
-            const yp = VEC3_YP$1.applyQuaternion(q);
-            const zp = VEC3_ZP$1.applyQuaternion(q);
+            const xp = VEC3_XP$2.applyQuaternion(q);
+            const yp = VEC3_YP$2.applyQuaternion(q);
+            const zp = VEC3_ZP$2.applyQuaternion(q);
             const xn = xp.negated;
             const yn = yp.negated;
             const zn = zp.negated;
@@ -1830,12 +1943,12 @@
             this.xArcBC_.setRotation(createArcRotation(xp, VEC3_ZN));
             this.yArcBC_.setRotation(createArcRotation(yp, VEC3_ZN));
             this.zArcBC_.setRotation(createArcRotation(zp, VEC3_ZN));
-            this.xArcF_.setRotation(createArcRotation(xp, VEC3_ZP$1));
-            this.yArcF_.setRotation(createArcRotation(yp, VEC3_ZP$1));
-            this.zArcF_.setRotation(createArcRotation(zp, VEC3_ZP$1));
-            this.xArcFC_.setRotation(createArcRotation(xp, VEC3_ZP$1));
-            this.yArcFC_.setRotation(createArcRotation(yp, VEC3_ZP$1));
-            this.zArcFC_.setRotation(createArcRotation(zp, VEC3_ZP$1));
+            this.xArcF_.setRotation(createArcRotation(xp, VEC3_ZP$2));
+            this.yArcF_.setRotation(createArcRotation(yp, VEC3_ZP$2));
+            this.zArcF_.setRotation(createArcRotation(zp, VEC3_ZP$2));
+            this.xArcFC_.setRotation(createArcRotation(xp, VEC3_ZP$2));
+            this.yArcFC_.setRotation(createArcRotation(yp, VEC3_ZP$2));
+            this.zArcFC_.setRotation(createArcRotation(zp, VEC3_ZP$2));
             // rotate labels
             [
                 { el: this.xLabel, v: VEC3_XP70 },
@@ -1887,10 +2000,6 @@
         }
     }
 
-    function clamp(x, l, h) {
-        return Math.min(Math.max(x, l), h);
-    }
-
     function saturate(x) {
         return clamp(x, 0.0, 1.0);
     }
@@ -1915,23 +2024,11 @@
         return saturate((x - a) / (b - a));
     }
 
-    function lofi(x, d) {
-        return Math.floor(x / d) * d;
-    }
-
-    function mod(x, d) {
-        return x - lofi(x, d);
-    }
-
-    function sanitizeAngle(angle) {
-        return mod(angle + Math.PI, Math.PI * 2.0) - Math.PI;
-    }
-
     const INV_SQRT2 = 1.0 / Math.sqrt(2.0);
-    const VEC3_XP = new Vector3(1.0, 0.0, 0.0);
-    const VEC3_YP = new Vector3(0.0, 1.0, 0.0);
-    const VEC3_ZP = new Vector3(0.0, 0.0, 1.0);
-    const QUAT_IDENTITY = new Quaternion(0.0, 0.0, 0.0, 1.0);
+    const VEC3_XP$1 = new Vector3(1.0, 0.0, 0.0);
+    const VEC3_YP$1 = new Vector3(0.0, 1.0, 0.0);
+    const VEC3_ZP$1 = new Vector3(0.0, 0.0, 1.0);
+    const QUAT_IDENTITY$1 = new Quaternion(0.0, 0.0, 0.0, 1.0);
     const QUAT_TOP = new Quaternion(INV_SQRT2, 0.0, 0.0, INV_SQRT2);
     const QUAT_RIGHT = new Quaternion(0.0, -INV_SQRT2, 0.0, INV_SQRT2);
     const QUAT_BOTTOM = new Quaternion(-INV_SQRT2, 0.0, 0.0, INV_SQRT2);
@@ -1981,7 +2078,7 @@
             [
                 { el: this.view.xLabel, q: QUAT_RIGHT },
                 { el: this.view.yLabel, q: QUAT_TOP },
-                { el: this.view.zLabel, q: QUAT_IDENTITY },
+                { el: this.view.zLabel, q: QUAT_IDENTITY$1 },
                 { el: this.view.xnLabel, q: QUAT_LEFT },
                 { el: this.view.ynLabel, q: QUAT_BOTTOM },
                 { el: this.view.znLabel, q: QUAT_BACK },
@@ -2011,7 +2108,7 @@
                     }
                     const axis = new Vector3(dy / l, dx / l, 0.0);
                     const quat = Quaternion.fromAxisAngle(axis, l / 68.0);
-                    this.value.rawValue = quat.multiply(this.value.rawValue);
+                    this.value.rawValue = this.value.rawValue.premultiply(quat);
                 }
                 this.px_ = x;
                 this.py_ = y;
@@ -2033,7 +2130,7 @@
                     const { initialRotation, initialAngle, axis } = this.angleState_;
                     const angleDiff = -sanitizeAngle(angle - initialAngle);
                     const quat = Quaternion.fromAxisAngle(axis, angleDiff);
-                    this.value.rawValue = quat.multiply(initialRotation);
+                    this.value.rawValue = initialRotation.premultiply(quat);
                 }
             }
             else {
@@ -2041,10 +2138,10 @@
                 const cy = d.bounds.height / 2.0;
                 const angle = Math.atan2(y - cy, x - cx);
                 if (this.angleState_ == null) {
-                    const axis = mode === 'angle-x' ? VEC3_XP :
-                        mode === 'angle-y' ? VEC3_YP :
-                            VEC3_ZP;
-                    const reverseAngle = axis.applyQuaternion(this.value.rawValue).z > 0.0;
+                    const axis = mode === 'angle-x' ? VEC3_XP$1 :
+                        mode === 'angle-y' ? VEC3_YP$1 :
+                            VEC3_ZP$1;
+                    const reverseAngle = axis.applyQuaternion(this.value.rawValue.quat).z > 0.0;
                     this.angleState_ = {
                         initialRotation: this.value.rawValue,
                         initialAngle: angle,
@@ -2076,13 +2173,13 @@
             if (isArrowKey(ev.key)) {
                 ev.preventDefault();
             }
-            // this.value.rawValue = new Point2d(
-            //   this.value.rawValue.x +
-            //     getStepForKey( this.baseSteps_[ 0 ], getHorizontalStepKeys( ev ) ),
-            //   this.value.rawValue.y +
-            //     getStepForKey( this.baseSteps_[ 1 ], getVerticalStepKeys( ev ) ) *
-            //       ( this.invertsY_ ? 1 : -1 ),
-            // );
+            const x = getStepForKey(1.0, getHorizontalStepKeys(ev));
+            const y = getStepForKey(1.0, getVerticalStepKeys(ev));
+            if (x !== 0 || y !== 0) {
+                const axis = new Vector3(-y, x, 0.0);
+                const quat = Quaternion.fromAxisAngle(axis, Math.PI / 16.0);
+                this.value.rawValue = this.value.rawValue.premultiply(quat);
+            }
         }
         changeModeIfNotAuto_(mode) {
             if (this.mode_.rawValue !== 'auto') {
@@ -2091,7 +2188,7 @@
         }
         autoRotate_(to) {
             this.mode_.rawValue = 'auto';
-            const from = this.value.rawValue.ban360s;
+            const from = this.value.rawValue;
             const beginTime = Date.now();
             const update = () => {
                 const now = Date.now();
@@ -2107,17 +2204,11 @@
         }
     }
 
-    const RotationInputRotationAssembly = {
-        toComponents: (r) => [
-            r.x,
-            r.y,
-            r.z,
-            r.w,
-        ],
-        fromComponents: (c) => new Quaternion(c[0], c[1], c[2], c[3]),
-    };
-
     const className$1 = ClassName('rotationswatch');
+    const VEC3_XP = new Vector3(1.0, 0.0, 0.0);
+    const VEC3_YP = new Vector3(0.0, 1.0, 0.0);
+    const VEC3_ZP = new Vector3(0.0, 0.0, 1.0);
+    const QUAT_IDENTITY = new Quaternion(0.0, 0.0, 0.0, 1.0);
     class RotationInputSwatchView {
         constructor(doc, config) {
             this.onValueChange_ = this.onValueChange_.bind(this);
@@ -2126,19 +2217,44 @@
             this.element = doc.createElement('div');
             this.element.classList.add(className$1());
             config.viewProps.bindClassModifiers(this.element);
-            const swatchElem = doc.createElement('div');
-            swatchElem.classList.add(className$1('sw'));
-            this.element.appendChild(swatchElem);
-            this.swatchElem_ = swatchElem;
             const buttonElem = doc.createElement('button');
             buttonElem.classList.add(className$1('b'));
             config.viewProps.bindDisabled(buttonElem);
             this.element.appendChild(buttonElem);
             this.buttonElement = buttonElem;
+            const svgElem = doc.createElementNS(SVG_NS, 'svg');
+            svgElem.classList.add(className$1('g'));
+            buttonElem.appendChild(svgElem);
+            this.svgElem_ = svgElem;
+            this.projector_ = new PointProjector();
+            this.projector_.viewport = [0, 0, 20, 20];
+            const arcArray = createArcVerticesArray(0.0, Math.PI, 33, 'x', 'y');
+            const arcArrayR = createArcVerticesArray(0.0, 2.0 * Math.PI, 65, 'x', 'y');
+            // arc
+            this.rArc_ = new SVGLineStrip(doc, arcArrayR, this.projector_);
+            this.rArc_.element.classList.add(className$1('arcr'));
+            svgElem.appendChild(this.rArc_.element);
+            this.rArc_.setRotation(QUAT_IDENTITY);
+            this.xArc_ = new SVGLineStrip(doc, arcArray, this.projector_);
+            this.xArc_.element.classList.add(className$1('arc'));
+            svgElem.appendChild(this.xArc_.element);
+            this.yArc_ = new SVGLineStrip(doc, arcArray, this.projector_);
+            this.yArc_.element.classList.add(className$1('arc'));
+            svgElem.appendChild(this.yArc_.element);
+            this.zArc_ = new SVGLineStrip(doc, arcArray, this.projector_);
+            this.zArc_.element.classList.add(className$1('arc'));
+            svgElem.appendChild(this.zArc_.element);
             this.update_();
         }
         update_() {
-            this.value.rawValue;
+            const q = this.value.rawValue.quat.normalized;
+            // rotate axes
+            const xp = VEC3_XP.applyQuaternion(q);
+            const yp = VEC3_YP.applyQuaternion(q);
+            const zp = VEC3_ZP.applyQuaternion(q);
+            this.xArc_.setRotation(createArcRotation(xp, VEC3_ZP));
+            this.yArc_.setRotation(createArcRotation(yp, VEC3_ZP));
+            this.zArc_.setRotation(createArcRotation(zp, VEC3_ZP));
         }
         onValueChange_() {
             this.update_();
@@ -2163,6 +2279,9 @@
             this.element.classList.add(className());
             config.foldable.bindExpandedClass(this.element, className(undefined, 'expanded'));
             bindValueMap(config.foldable, 'completed', valueToClassName(this.element, className(undefined, 'cpl')));
+            if (config.rotationMode === 'quaternion') {
+                this.element.classList.add(className('quat'));
+            }
             const headElem = doc.createElement('div');
             headElem.classList.add(className('h'));
             this.element.appendChild(headElem);
@@ -2203,13 +2322,14 @@
             buttonElem.addEventListener('blur', this.onButtonBlur_);
             buttonElem.addEventListener('click', this.onButtonClick_);
             this.textC_ = new PointNdTextController(doc, {
-                assembly: RotationInputRotationAssembly,
+                assembly: config.assembly,
                 axes: config.axes,
                 parser: config.parser,
                 value: this.value,
                 viewProps: this.viewProps,
             });
             this.view = new RotationInputView(doc, {
+                rotationMode: config.rotationMode,
                 foldable: this.foldable_,
                 pickerLayout: config.pickerLayout,
             });
@@ -2294,13 +2414,14 @@
         }
     }
 
-    function createAxis(initialValue, constraint) {
+    function createAxisEuler(digits, constraint) {
+        const step = Math.pow(0.1, digits);
         return {
-            baseStep: getBaseStep(constraint),
+            baseStep: step,
             constraint: constraint,
             textProps: ValueMap.fromObject({
-                draggingScale: getSuitableDraggingScale(constraint, initialValue),
-                formatter: createNumberFormatter(getSuitableDecimalDigits(constraint, initialValue)),
+                draggingScale: step,
+                formatter: createNumberFormatter(digits),
             }),
         };
     }
@@ -2322,44 +2443,56 @@
         return new CompositeConstraint(constraints);
     }
 
-    function isRotationInputRotation(input) {
-        var _a, _b, _c, _d;
-        if (typeof input !== 'object') {
-            return false;
-        }
-        if (typeof ((_a = input) === null || _a === void 0 ? void 0 : _a.x) !== 'number' ||
-            typeof ((_b = input) === null || _b === void 0 ? void 0 : _b.y) !== 'number' ||
-            typeof ((_c = input) === null || _c === void 0 ? void 0 : _c.z) !== 'number' ||
-            typeof ((_d = input) === null || _d === void 0 ? void 0 : _d.w) !== 'number') {
-            return false;
-        }
-        return true;
+    function createEulerAssembly(order, unit) {
+        return {
+            toComponents: (r) => r.getComponents(),
+            fromComponents: (c) => new Euler(c[0], c[1], c[2], order, unit),
+        };
     }
 
-    function parseRotationMode(value) {
+    function parseEuler(exValue, order, unit) {
+        var _a, _b, _c;
+        if (typeof ((_a = exValue) === null || _a === void 0 ? void 0 : _a.x) === 'number' &&
+            typeof ((_b = exValue) === null || _b === void 0 ? void 0 : _b.y) === 'number' &&
+            typeof ((_c = exValue) === null || _c === void 0 ? void 0 : _c.z) === 'number') {
+            return new Euler(exValue.x, exValue.y, exValue.z, order, unit);
+        }
+        else {
+            return new Euler(0.0, 0.0, 0.0, order, unit);
+        }
+    }
+
+    function parseEulerOrder(value) {
         switch (value) {
-            case 'eulerXYZ':
-            case 'eulerXZY':
-            case 'eulerYXZ':
-            case 'eulerYZX':
-            case 'eulerZXY':
-            case 'eulerZYX':
-            case 'quaternion':
-            case 'axisAngle':
+            case 'XYZ':
+            case 'XZY':
+            case 'YXZ':
+            case 'YZX':
+            case 'ZXY':
+            case 'ZYX':
                 return value;
             default:
                 return undefined;
         }
     }
 
-    const RotationInputPlugin = {
+    function parseEulerUnit(value) {
+        switch (value) {
+            case 'rad':
+            case 'deg':
+            case 'turn':
+                return value;
+            default:
+                return undefined;
+        }
+    }
+
+    const RotationInputPluginEuler = {
         id: 'rotation',
         type: 'input',
-        css: '.tp-rotationgizmov_p{-webkit-appearance:none;-moz-appearance:none;appearance:none;background-color:transparent;border-width:0;font-family:inherit;font-size:inherit;font-weight:inherit;margin:0;outline:none;padding:0}.tp-rotationgizmov_p{background-color:var(--in-bg);border-radius:var(--elm-br);box-sizing:border-box;color:var(--in-fg);font-family:inherit;height:var(--bld-us);line-height:var(--bld-us);min-width:0;width:100%}.tp-rotationgizmov_p:hover{background-color:var(--in-bg-h)}.tp-rotationgizmov_p:focus{background-color:var(--in-bg-f)}.tp-rotationgizmov_p:active{background-color:var(--in-bg-a)}.tp-rotationgizmov_p:disabled{opacity:0.5}.tp-rotationv{position:relative}.tp-rotationv_root{background-color:var(--mo-bg);width:100%;height:calc( 2.0 * var(--bld-us))}.tp-rotationv_h{display:flex}.tp-rotationv_s{flex-grow:0;flex-shrink:0;width:var(--bld-us);margin-right:4px}.tp-rotationv_g{height:0;margin-top:0;opacity:0;overflow:hidden;transition:height .2s ease-in-out,opacity .2s linear,margin .2s ease-in-out}.tp-rotationv.tp-rotationv-expanded .tp-rotationv_g{margin-top:var(--bld-s);opacity:1}.tp-rotationv .tp-popv{left:calc(-1 * var(--cnt-h-p));right:calc(-1 * var(--cnt-h-p));top:var(--bld-us)}.tp-rotationswatchv_sw{background-color:var(--btn-bg);border-radius:var(--elm-br);box-sizing:border-box;color:var(--in-fg);font-family:inherit;height:var(--bld-us);line-height:var(--bld-us);min-width:0;width:100%}.tp-rotationswatchv_b{-webkit-appearance:none;-moz-appearance:none;appearance:none;background-color:transparent;border-width:0;cursor:pointer;display:block;height:var(--bld-us);left:0;margin:0;outline:none;padding:0;position:absolute;top:0;width:var(--bld-us)}.tp-rotationgizmov{padding-left:calc(var(--bld-us) + 4px)}.tp-rotationgizmov path{stroke-linecap:round;stroke-linejoin:round}.tp-rotationgizmov_p{cursor:move;height:0;overflow:hidden;padding-bottom:100%;position:relative}.tp-rotationgizmov_g{display:block;height:100%;left:0;pointer-events:none;position:absolute;top:0;width:100%}.tp-rotationgizmov_axisx{stroke:#eb103f;stroke-width:2px}.tp-rotationgizmov_axisy{stroke:#4eeb10;stroke-width:2px}.tp-rotationgizmov_axisz{stroke:#1068eb;stroke-width:2px}.tp-rotationgizmov_axisn{stroke:var(--in-fg);stroke-width:2px}.tp-rotationgizmov_arcx{fill:none;stroke:var(--in-fg)}.tp-rotationgizmov_arcx.tp-rotationgizmov_arcx_hover{stroke:#eb103f}.tp-rotationgizmov_arcx.tp-rotationgizmov_arcx_active{stroke:#eb103f;stroke-width:2px}.tp-rotationgizmov_arcy{fill:none;stroke:var(--in-fg)}.tp-rotationgizmov_arcy.tp-rotationgizmov_arcy_hover{stroke:#4eeb10}.tp-rotationgizmov_arcy.tp-rotationgizmov_arcy_active{stroke:#4eeb10;stroke-width:2px}.tp-rotationgizmov_arcz{fill:none;stroke:var(--in-fg)}.tp-rotationgizmov_arcz.tp-rotationgizmov_arcz_hover{stroke:#1068eb}.tp-rotationgizmov_arcz.tp-rotationgizmov_arcz_active{stroke:#1068eb;stroke-width:2px}.tp-rotationgizmov_arcr{fill:none;stroke:var(--in-fg)}.tp-rotationgizmov_arcr.tp-rotationgizmov_arcr_hover{stroke:#ebd510}.tp-rotationgizmov_arcr.tp-rotationgizmov_arcr_active{stroke:#ebd510;stroke-width:2px}.tp-rotationgizmov_arcc{fill:none;stroke:transparent;stroke-width:5px;pointer-events:auto}.tp-rotationgizmov_labelcirclex{fill:#eb103f;cursor:pointer;pointer-events:auto}.tp-rotationgizmov_labelcirclex:hover{opacity:0.7}.tp-rotationgizmov_labelcircley{fill:#4eeb10;cursor:pointer;pointer-events:auto}.tp-rotationgizmov_labelcircley:hover{opacity:0.7}.tp-rotationgizmov_labelcirclez{fill:#1068eb;cursor:pointer;pointer-events:auto}.tp-rotationgizmov_labelcirclez:hover{opacity:0.7}.tp-rotationgizmov_labelcirclen{fill:var(--in-fg);cursor:pointer;pointer-events:auto}.tp-rotationgizmov_labelcirclen:hover{opacity:0.7}.tp-rotationgizmov_labeltext{fill:var(--btn-fg);stroke:var(--btn-fg);stroke-width:1px}.tp-rotationgizmov_p:focus .tp-rotationgizmov_m{background-color:var(--in-fg);border-width:0}',
+        css: '.tp-rotationswatchv_b,.tp-rotationgizmov_p{-webkit-appearance:none;-moz-appearance:none;appearance:none;background-color:transparent;border-width:0;font-family:inherit;font-size:inherit;font-weight:inherit;margin:0;outline:none;padding:0}.tp-rotationswatchv_b{background-color:var(--btn-bg);border-radius:var(--elm-br);color:var(--btn-fg);cursor:pointer;display:block;font-weight:bold;height:var(--bld-us);line-height:var(--bld-us);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tp-rotationswatchv_b:hover{background-color:var(--btn-bg-h)}.tp-rotationswatchv_b:focus{background-color:var(--btn-bg-f)}.tp-rotationswatchv_b:active{background-color:var(--btn-bg-a)}.tp-rotationswatchv_b:disabled{opacity:0.5}.tp-rotationgizmov_p{background-color:var(--in-bg);border-radius:var(--elm-br);box-sizing:border-box;color:var(--in-fg);font-family:inherit;height:var(--bld-us);line-height:var(--bld-us);min-width:0;width:100%}.tp-rotationgizmov_p:hover{background-color:var(--in-bg-h)}.tp-rotationgizmov_p:focus{background-color:var(--in-bg-f)}.tp-rotationgizmov_p:active{background-color:var(--in-bg-a)}.tp-rotationgizmov_p:disabled{opacity:0.5}.tp-rotationv{position:relative}.tp-rotationv_quat .tp-txtv_i{padding-left:0}.tp-rotationv_root{background-color:var(--mo-bg);width:100%;height:calc( 2.0 * var(--bld-us))}.tp-rotationv_h{display:flex}.tp-rotationv_s{flex-grow:0;flex-shrink:0;width:var(--bld-us);margin-right:4px}.tp-rotationv_g{height:0;margin-top:0;opacity:0;overflow:hidden;transition:height .2s ease-in-out,opacity .2s linear,margin .2s ease-in-out}.tp-rotationv.tp-rotationv-expanded .tp-rotationv_g{margin-top:var(--bld-s);opacity:1}.tp-rotationv .tp-popv{left:calc(-1 * var(--cnt-h-p));right:calc(-1 * var(--cnt-h-p));top:var(--bld-us)}.tp-rotationswatchv path{stroke-linecap:round;stroke-linejoin:round}.tp-rotationswatchv_b{height:var(--bld-us);margin-right:4px;position:relative;width:var(--bld-us)}.tp-rotationswatchv_arc{fill:none;stroke:var(--btn-bg);stroke-width:1px}.tp-rotationswatchv_arcr{fill:var(--btn-fg);stroke:var(--btn-bg);stroke-width:1px}.tp-rotationgizmov{padding-left:calc(var(--bld-us) + 4px)}.tp-rotationgizmov path{stroke-linecap:round;stroke-linejoin:round}.tp-rotationgizmov_p{cursor:move;height:0;overflow:hidden;padding-bottom:100%;position:relative}.tp-rotationgizmov_g{display:block;height:100%;left:0;pointer-events:none;position:absolute;top:0;width:100%}.tp-rotationgizmov_axisx{stroke:#eb103f;stroke-width:2px}.tp-rotationgizmov_axisy{stroke:#4eeb10;stroke-width:2px}.tp-rotationgizmov_axisz{stroke:#1068eb;stroke-width:2px}.tp-rotationgizmov_axisn{stroke:var(--in-fg);stroke-width:2px}.tp-rotationgizmov_arcx{fill:none;stroke:var(--in-fg)}.tp-rotationgizmov_arcx.tp-rotationgizmov_arcx_hover{stroke:#eb103f}.tp-rotationgizmov_arcx.tp-rotationgizmov_arcx_active{stroke:#eb103f;stroke-width:2px}.tp-rotationgizmov_arcy{fill:none;stroke:var(--in-fg)}.tp-rotationgizmov_arcy.tp-rotationgizmov_arcy_hover{stroke:#4eeb10}.tp-rotationgizmov_arcy.tp-rotationgizmov_arcy_active{stroke:#4eeb10;stroke-width:2px}.tp-rotationgizmov_arcz{fill:none;stroke:var(--in-fg)}.tp-rotationgizmov_arcz.tp-rotationgizmov_arcz_hover{stroke:#1068eb}.tp-rotationgizmov_arcz.tp-rotationgizmov_arcz_active{stroke:#1068eb;stroke-width:2px}.tp-rotationgizmov_arcr{fill:none;stroke:var(--in-fg)}.tp-rotationgizmov_arcr.tp-rotationgizmov_arcr_hover{stroke:#ebd510}.tp-rotationgizmov_arcr.tp-rotationgizmov_arcr_active{stroke:#ebd510;stroke-width:2px}.tp-rotationgizmov_arcc{fill:none;stroke:transparent;stroke-width:5px;pointer-events:auto}.tp-rotationgizmov_labelcirclex{fill:#eb103f;cursor:pointer;pointer-events:auto}.tp-rotationgizmov_labelcirclex:hover{opacity:0.7}.tp-rotationgizmov_labelcircley{fill:#4eeb10;cursor:pointer;pointer-events:auto}.tp-rotationgizmov_labelcircley:hover{opacity:0.7}.tp-rotationgizmov_labelcirclez{fill:#1068eb;cursor:pointer;pointer-events:auto}.tp-rotationgizmov_labelcirclez:hover{opacity:0.7}.tp-rotationgizmov_labelcirclen{fill:var(--in-fg);cursor:pointer;pointer-events:auto}.tp-rotationgizmov_labelcirclen:hover{opacity:0.7}.tp-rotationgizmov_labeltext{fill:var(--btn-fg);stroke:var(--btn-fg);stroke-width:1px}.tp-rotationgizmov_p:focus .tp-rotationgizmov_m{background-color:var(--in-fg);border-width:0}',
         accept(exValue, params) {
-            if (!isRotationInputRotation(exValue)) {
-                return null;
-            }
+            var _a, _b;
             // Parse parameters object
             const p = ParamsParsers;
             const result = parseParams(params, {
@@ -2367,32 +2500,147 @@
                 label: p.optional.string,
                 picker: p.optional.custom(parsePickerLayout),
                 expanded: p.optional.boolean,
-                rotationMode: p.optional.custom(parseRotationMode),
+                rotationMode: p.required.constant('euler'),
+                x: p.optional.custom(parsePointDimensionParams),
+                y: p.optional.custom(parsePointDimensionParams),
+                z: p.optional.custom(parsePointDimensionParams),
+                order: p.optional.custom(parseEulerOrder),
+                unit: p.optional.custom(parseEulerUnit),
+            });
+            return result ? {
+                initialValue: parseEuler(exValue, (_a = result.order) !== null && _a !== void 0 ? _a : 'XYZ', (_b = result.unit) !== null && _b !== void 0 ? _b : 'rad'),
+                params: result,
+            } : null;
+        },
+        binding: {
+            reader({ params }) {
+                return (exValue) => {
+                    var _a, _b;
+                    return parseEuler(exValue, (_a = params.order) !== null && _a !== void 0 ? _a : 'XYZ', (_b = params.unit) !== null && _b !== void 0 ? _b : 'rad');
+                };
+            },
+            constraint({ params }) {
+                var _a, _b;
+                return new PointNdConstraint({
+                    assembly: createEulerAssembly((_a = params.order) !== null && _a !== void 0 ? _a : 'XYZ', (_b = params.unit) !== null && _b !== void 0 ? _b : 'rad'),
+                    components: [
+                        createDimensionConstraint('x' in params ? params.x : undefined),
+                        createDimensionConstraint('y' in params ? params.y : undefined),
+                        createDimensionConstraint('z' in params ? params.z : undefined),
+                    ]
+                });
+            },
+            writer(_args) {
+                return (target, inValue) => {
+                    target.writeProperty('x', inValue.x);
+                    target.writeProperty('y', inValue.y);
+                    target.writeProperty('z', inValue.z);
+                };
+            },
+        },
+        controller({ document, value, constraint, params, viewProps }) {
+            var _a, _b;
+            if (!(constraint instanceof PointNdConstraint)) {
+                throw TpError.shouldNeverHappen();
+            }
+            const expanded = 'expanded' in params ? params.expanded : undefined;
+            const picker = 'picker' in params ? params.picker : undefined;
+            const unit = (_a = params.unit) !== null && _a !== void 0 ? _a : 'rad';
+            const digits = {
+                rad: 2,
+                deg: 0,
+                turn: 2,
+            }[unit];
+            return new RotationInputController(document, {
+                axes: [
+                    createAxisEuler(digits, constraint.components[0]),
+                    createAxisEuler(digits, constraint.components[1]),
+                    createAxisEuler(digits, constraint.components[2]),
+                ],
+                assembly: createEulerAssembly((_b = params.order) !== null && _b !== void 0 ? _b : 'XYZ', unit),
+                rotationMode: 'euler',
+                expanded: expanded !== null && expanded !== void 0 ? expanded : false,
+                parser: parseNumber,
+                pickerLayout: picker !== null && picker !== void 0 ? picker : 'popup',
+                value,
+                viewProps: viewProps,
+            });
+        },
+    };
+
+    const QuaternionAssembly = {
+        toComponents: (r) => [
+            r.x,
+            r.y,
+            r.z,
+            r.w,
+        ],
+        fromComponents: (c) => new Quaternion(c[0], c[1], c[2], c[3]),
+    };
+
+    function createAxisQuaternion(constraint) {
+        return {
+            baseStep: 0.01,
+            constraint: constraint,
+            textProps: ValueMap.fromObject({
+                draggingScale: 0.01,
+                formatter: (value) => {
+                    if (Math.abs(value) < 0.995) {
+                        return value.toFixed(2).replace('0.', '.');
+                    }
+                    else {
+                        return value.toFixed(1);
+                    }
+                },
+            }),
+        };
+    }
+
+    function parseQuaternion(exValue) {
+        var _a, _b, _c, _d;
+        if (typeof ((_a = exValue) === null || _a === void 0 ? void 0 : _a.x) === 'number' &&
+            typeof ((_b = exValue) === null || _b === void 0 ? void 0 : _b.y) === 'number' &&
+            typeof ((_c = exValue) === null || _c === void 0 ? void 0 : _c.z) === 'number' &&
+            typeof ((_d = exValue) === null || _d === void 0 ? void 0 : _d.w) === 'number') {
+            return new Quaternion(exValue.x, exValue.y, exValue.z, exValue.w);
+        }
+        else {
+            return new Quaternion(0.0, 0.0, 0.0, 1.0);
+        }
+    }
+
+    const RotationInputPluginQuaternion = {
+        id: 'rotation',
+        type: 'input',
+        css: '.tp-rotationswatchv_b,.tp-rotationgizmov_p{-webkit-appearance:none;-moz-appearance:none;appearance:none;background-color:transparent;border-width:0;font-family:inherit;font-size:inherit;font-weight:inherit;margin:0;outline:none;padding:0}.tp-rotationswatchv_b{background-color:var(--btn-bg);border-radius:var(--elm-br);color:var(--btn-fg);cursor:pointer;display:block;font-weight:bold;height:var(--bld-us);line-height:var(--bld-us);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tp-rotationswatchv_b:hover{background-color:var(--btn-bg-h)}.tp-rotationswatchv_b:focus{background-color:var(--btn-bg-f)}.tp-rotationswatchv_b:active{background-color:var(--btn-bg-a)}.tp-rotationswatchv_b:disabled{opacity:0.5}.tp-rotationgizmov_p{background-color:var(--in-bg);border-radius:var(--elm-br);box-sizing:border-box;color:var(--in-fg);font-family:inherit;height:var(--bld-us);line-height:var(--bld-us);min-width:0;width:100%}.tp-rotationgizmov_p:hover{background-color:var(--in-bg-h)}.tp-rotationgizmov_p:focus{background-color:var(--in-bg-f)}.tp-rotationgizmov_p:active{background-color:var(--in-bg-a)}.tp-rotationgizmov_p:disabled{opacity:0.5}.tp-rotationv{position:relative}.tp-rotationv_quat .tp-txtv_i{padding-left:0}.tp-rotationv_root{background-color:var(--mo-bg);width:100%;height:calc( 2.0 * var(--bld-us))}.tp-rotationv_h{display:flex}.tp-rotationv_s{flex-grow:0;flex-shrink:0;width:var(--bld-us);margin-right:4px}.tp-rotationv_g{height:0;margin-top:0;opacity:0;overflow:hidden;transition:height .2s ease-in-out,opacity .2s linear,margin .2s ease-in-out}.tp-rotationv.tp-rotationv-expanded .tp-rotationv_g{margin-top:var(--bld-s);opacity:1}.tp-rotationv .tp-popv{left:calc(-1 * var(--cnt-h-p));right:calc(-1 * var(--cnt-h-p));top:var(--bld-us)}.tp-rotationswatchv path{stroke-linecap:round;stroke-linejoin:round}.tp-rotationswatchv_b{height:var(--bld-us);margin-right:4px;position:relative;width:var(--bld-us)}.tp-rotationswatchv_arc{fill:none;stroke:var(--btn-bg);stroke-width:1px}.tp-rotationswatchv_arcr{fill:var(--btn-fg);stroke:var(--btn-bg);stroke-width:1px}.tp-rotationgizmov{padding-left:calc(var(--bld-us) + 4px)}.tp-rotationgizmov path{stroke-linecap:round;stroke-linejoin:round}.tp-rotationgizmov_p{cursor:move;height:0;overflow:hidden;padding-bottom:100%;position:relative}.tp-rotationgizmov_g{display:block;height:100%;left:0;pointer-events:none;position:absolute;top:0;width:100%}.tp-rotationgizmov_axisx{stroke:#eb103f;stroke-width:2px}.tp-rotationgizmov_axisy{stroke:#4eeb10;stroke-width:2px}.tp-rotationgizmov_axisz{stroke:#1068eb;stroke-width:2px}.tp-rotationgizmov_axisn{stroke:var(--in-fg);stroke-width:2px}.tp-rotationgizmov_arcx{fill:none;stroke:var(--in-fg)}.tp-rotationgizmov_arcx.tp-rotationgizmov_arcx_hover{stroke:#eb103f}.tp-rotationgizmov_arcx.tp-rotationgizmov_arcx_active{stroke:#eb103f;stroke-width:2px}.tp-rotationgizmov_arcy{fill:none;stroke:var(--in-fg)}.tp-rotationgizmov_arcy.tp-rotationgizmov_arcy_hover{stroke:#4eeb10}.tp-rotationgizmov_arcy.tp-rotationgizmov_arcy_active{stroke:#4eeb10;stroke-width:2px}.tp-rotationgizmov_arcz{fill:none;stroke:var(--in-fg)}.tp-rotationgizmov_arcz.tp-rotationgizmov_arcz_hover{stroke:#1068eb}.tp-rotationgizmov_arcz.tp-rotationgizmov_arcz_active{stroke:#1068eb;stroke-width:2px}.tp-rotationgizmov_arcr{fill:none;stroke:var(--in-fg)}.tp-rotationgizmov_arcr.tp-rotationgizmov_arcr_hover{stroke:#ebd510}.tp-rotationgizmov_arcr.tp-rotationgizmov_arcr_active{stroke:#ebd510;stroke-width:2px}.tp-rotationgizmov_arcc{fill:none;stroke:transparent;stroke-width:5px;pointer-events:auto}.tp-rotationgizmov_labelcirclex{fill:#eb103f;cursor:pointer;pointer-events:auto}.tp-rotationgizmov_labelcirclex:hover{opacity:0.7}.tp-rotationgizmov_labelcircley{fill:#4eeb10;cursor:pointer;pointer-events:auto}.tp-rotationgizmov_labelcircley:hover{opacity:0.7}.tp-rotationgizmov_labelcirclez{fill:#1068eb;cursor:pointer;pointer-events:auto}.tp-rotationgizmov_labelcirclez:hover{opacity:0.7}.tp-rotationgizmov_labelcirclen{fill:var(--in-fg);cursor:pointer;pointer-events:auto}.tp-rotationgizmov_labelcirclen:hover{opacity:0.7}.tp-rotationgizmov_labeltext{fill:var(--btn-fg);stroke:var(--btn-fg);stroke-width:1px}.tp-rotationgizmov_p:focus .tp-rotationgizmov_m{background-color:var(--in-fg);border-width:0}',
+        accept(exValue, params) {
+            // Parse parameters object
+            const p = ParamsParsers;
+            const result = parseParams(params, {
+                view: p.required.constant('rotation'),
+                label: p.optional.string,
+                picker: p.optional.custom(parsePickerLayout),
+                expanded: p.optional.boolean,
+                rotationMode: p.optional.constant('quaternion'),
                 x: p.optional.custom(parsePointDimensionParams),
                 y: p.optional.custom(parsePointDimensionParams),
                 z: p.optional.custom(parsePointDimensionParams),
                 w: p.optional.custom(parsePointDimensionParams),
             });
             return result ? {
-                initialValue: exValue,
+                initialValue: parseQuaternion(exValue),
                 params: result,
             } : null;
         },
         binding: {
             reader(_args) {
                 return (exValue) => {
-                    // TODO conversion
-                    if (isRotationInputRotation(exValue)) {
-                        return exValue;
-                    }
-                    else {
-                        return new Quaternion();
-                    }
+                    return parseQuaternion(exValue);
                 };
             },
             constraint({ params }) {
                 return new PointNdConstraint({
-                    assembly: RotationInputRotationAssembly,
+                    assembly: QuaternionAssembly,
                     components: [
                         createDimensionConstraint('x' in params ? params.x : undefined),
                         createDimensionConstraint('y' in params ? params.y : undefined),
@@ -2411,21 +2659,20 @@
             },
         },
         controller({ document, value, constraint, params, viewProps }) {
-            var _a;
             if (!(constraint instanceof PointNdConstraint)) {
                 throw TpError.shouldNeverHappen();
             }
-            const rotationMode = (_a = params.rotationMode) !== null && _a !== void 0 ? _a : 'quaternion';
             const expanded = 'expanded' in params ? params.expanded : undefined;
             const picker = 'picker' in params ? params.picker : undefined;
             return new RotationInputController(document, {
                 axes: [
-                    createAxis(value.rawValue.x, constraint.components[0]),
-                    createAxis(value.rawValue.y, constraint.components[1]),
-                    createAxis(value.rawValue.z, constraint.components[2]),
-                    createAxis(value.rawValue.w, constraint.components[3]),
+                    createAxisQuaternion(constraint.components[0]),
+                    createAxisQuaternion(constraint.components[1]),
+                    createAxisQuaternion(constraint.components[2]),
+                    createAxisQuaternion(constraint.components[3]),
                 ],
-                rotationMode,
+                assembly: QuaternionAssembly,
+                rotationMode: 'quaternion',
                 expanded: expanded !== null && expanded !== void 0 ? expanded : false,
                 parser: parseNumber,
                 pickerLayout: picker !== null && picker !== void 0 ? picker : 'popup',
@@ -2435,8 +2682,14 @@
         },
     };
 
-    exports.RotationInputPlugin = RotationInputPlugin;
-    exports.plugin = RotationInputPlugin;
+    const plugins = [
+        RotationInputPluginEuler,
+        RotationInputPluginQuaternion,
+    ];
+
+    exports.RotationInputPluginEuler = RotationInputPluginEuler;
+    exports.RotationInputPluginQuaternion = RotationInputPluginQuaternion;
+    exports.plugins = plugins;
 
     Object.defineProperty(exports, '__esModule', { value: true });
 
