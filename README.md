@@ -4,7 +4,7 @@
 
 Rotation input plugin for Tweakpane
 
-![rotation](https://github.com/0b5vr/tweakpane-plugin-rotation/raw/dev/readme-images/rotation.png)
+![@0b5vr/tweakpane-plugin-rotation, Rotation input plugin for tweakpane. A working screenshot of the plugin on the right](https://github.com/0b5vr/tweakpane-plugin-rotation/raw/dev/readme-images/rotation.png)
 
 [Sandbox](https://0b5vr.github.io/tweakpane-plugin-rotation)
 
