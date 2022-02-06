@@ -1,9 +1,9 @@
 import { BindingTarget, InputBindingPlugin, ParamsParsers, PointNdConstraint, TpError, parseNumber, parseParams, parsePickerLayout, parsePointDimensionParams } from '@tweakpane/core';
 import { Euler } from './Euler';
-import { EulerAssembly } from './EulerAssembly';
 import { RotationInputController } from './RotationInputController';
 import { createAxis } from './createAxis';
 import { createDimensionConstraint } from './createDimensionConstraint';
+import { createEulerAssembly } from './createEulerAssembly';
 import { parseEuler } from './parseEuler';
 import { parseEulerOrder } from './parseEulerOrder';
 import type { RotationInputPluginEulerParams } from './RotationInputPluginEulerParams';
@@ -47,7 +47,7 @@ RotationInputPluginEulerParams
 
     constraint( { params } ) {
       return new PointNdConstraint( {
-        assembly: EulerAssembly,
+        assembly: createEulerAssembly( params.order ?? 'XYZ' ),
         components: [
           createDimensionConstraint( 'x' in params ? params.x : undefined ),
           createDimensionConstraint( 'y' in params ? params.y : undefined ),
@@ -79,7 +79,7 @@ RotationInputPluginEulerParams
         createAxis( value.rawValue.y, constraint.components[ 1 ] ),
         createAxis( value.rawValue.z, constraint.components[ 2 ] ),
       ],
-      assembly: EulerAssembly,
+      assembly: createEulerAssembly( params.order ?? 'XYZ' ),
       rotationMode: 'euler',
       expanded: expanded ?? false,
       parser: parseNumber,
