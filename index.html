@@ -22,7 +22,7 @@
 
       const params = {
         rotation: { x: 0.0, y: 0.0, z: 0.0, w: 1.0 },
-        rotation2: { x: 0.0, y: 0.0, z: 0.0, w: 1.0 },
+        rotation2: { x: 0.0, y: 0.0, z: 0.0 },
       };
 
       const rotation = pane.addInput( params, 'rotation', {
@@ -34,7 +34,7 @@
       const rotation2 = pane.addInput( params, 'rotation2', {
         view: 'rotation',
         label: 'rotation2',
-        rotationMode: 'quaternion',
+        rotationMode: 'euler',
         picker: 'inline',
         expanded: true,
       } );

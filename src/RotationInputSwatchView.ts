@@ -1,12 +1,12 @@
 import { ClassName, Value, View } from '@tweakpane/core';
-import type { Quaternion } from './Quaternion';
+import { Rotation } from './Rotation';
 import type { RotationInputSwatchViewConfig } from './RotationInputSwatchViewConfig';
 
 const className = ClassName( 'rotationswatch' );
 
 export class RotationInputSwatchView implements View {
   public readonly element: HTMLElement;
-  public readonly value: Value<Quaternion>;
+  public readonly value: Value<Rotation>;
   public readonly buttonElement: HTMLButtonElement;
   private swatchElem_: HTMLDivElement;
 

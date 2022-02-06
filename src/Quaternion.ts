@@ -1,6 +1,9 @@
+import { Euler } from './Euler';
+import { EulerOrder } from './EulerOrder';
+import { Rotation } from './Rotation';
 import { Vector3 } from './Vector3';
 
-export class Quaternion {
+export class Quaternion extends Rotation {
   public static fromAxisAngle( axis: Vector3, angle: number ): Quaternion {
     const halfAngle = angle / 2.0;
     const sinHalfAngle = Math.sin( halfAngle );
@@ -11,6 +14,41 @@ export class Quaternion {
       axis.z * sinHalfAngle,
       Math.cos( halfAngle ),
     );
+  }
+
+  public static fromEuler( euler: Euler ): Quaternion {
+    const [ i, j, k, sign ] =
+      euler.order === 'XYZ' ? [ 0, 1, 2, 1 ] :
+      euler.order === 'XZY' ? [ 0, 2, 1, -1 ] :
+      euler.order === 'YXZ' ? [ 1, 0, 2, -1 ] :
+      euler.order === 'YZX' ? [ 1, 2, 0, 1 ] :
+      euler.order === 'ZXY' ? [ 2, 0, 1, 1 ] :
+      [ 2, 1, 0, -1 ];
+
+    const compo = euler.getComponents();
+
+    const ti = 0.5 * compo[ i ];
+    const tj = 0.5 * sign * compo[ j ];
+    const tk = 0.5 * compo[ k ];
+
+    const ci = Math.cos( ti );
+    const cj = Math.cos( tj );
+    const ck = Math.cos( tk );
+    const si = Math.sin( ti );
+    const sj = Math.sin( tj );
+    const sk = Math.sin( tk );
+
+    const result = [
+      0.0,
+      0.0,
+      0.0,
+      ck * cj * ci + sk * sj * si,
+    ];
+    result[ i ] = ck * cj * si - sk * sj * ci;
+    result[ j ] = sign * ( ck * sj * ci + sk * cj * si );
+    result[ k ] = sk * cj * ci - ck * sj * si;
+
+    return new Quaternion( ...result );
   }
 
   public static lookRotation( look: Vector3, up: Vector3 ): Quaternion {
@@ -76,14 +114,24 @@ export class Quaternion {
   public w: number;
 
   public constructor( x?: number, y?: number, z?: number, w?: number ) {
+    super();
+
     this.x = x ?? 0.0;
     this.y = y ?? 0.0;
     this.z = z ?? 0.0;
     this.w = w ?? 1.0;
   }
 
+  public get quat(): Quaternion {
+    return this;
+  }
+
   public getComponents(): number[] {
     return [ this.x, this.y, this.z, this.w ];
+  }
+
+  public toEuler( order: EulerOrder ): Euler {
+    return Euler.fromQuaternion( this, order );
   }
 
   public get lengthSq(): number {
@@ -122,23 +170,32 @@ export class Quaternion {
     return ( this.w < 0.0 ) ? this.negated : this;
   }
 
-  public multiply( q: Quaternion ): Quaternion {
+  public multiply( br: Rotation ): Quaternion {
+    const b = br.quat;
+
     return new Quaternion(
-      this.w * q.x + this.x * q.w + this.y * q.z - this.z * q.y,
-      this.w * q.y - this.x * q.z + this.y * q.w + this.z * q.x,
-      this.w * q.z + this.x * q.y - this.y * q.x + this.z * q.w,
-      this.w * q.w - this.x * q.x - this.y * q.y - this.z * q.z,
+      this.w * b.x + this.x * b.w + this.y * b.z - this.z * b.y,
+      this.w * b.y - this.x * b.z + this.y * b.w + this.z * b.x,
+      this.w * b.z + this.x * b.y - this.y * b.x + this.z * b.w,
+      this.w * b.w - this.x * b.x - this.y * b.y - this.z * b.z,
     );
   }
 
-  public slerp( b: Quaternion, t: number ): Quaternion {
+  public format( r: Rotation ): Quaternion {
+    return r.quat;
+  }
+
+  public slerp( br: Rotation, t: number ): Quaternion {
+    let b = br.quat;
+
     if ( t === 0.0 ) { return this; }
     if ( t === 1.0 ) { return b; }
 
     // Ref: https://github.com/mrdoob/three.js/blob/master/src/math/Quaternion.js
     // Ref: http://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/slerp/
 
-    const a = this as Quaternion;
+    const a = this.ban360s;
+    b = b.ban360s;
 
     let cosHalfTheta = a.w * b.w + a.x * b.x + a.y * b.y + a.z * b.z;
 
@@ -178,5 +235,15 @@ export class Quaternion {
       a.z * ratioA + b.z * ratioB,
       a.w * ratioA + b.w * ratioB,
     );
+  }
+
+  public toMat3(): [ number, number, number, number, number, number, number, number, number ] {
+    const { x, y, z, w } = this;
+
+    return [
+      1.0 - 2.0 * y * y - 2.0 * z * z, 2.0 * x * y + 2.0 * z * w, 2.0 * x * z - 2.0 * y * w,
+      2.0 * x * y - 2.0 * z * w, 1.0 - 2.0 * x * x - 2.0 * z * z, 2.0 * y * z + 2.0 * x * w,
+      2.0 * x * z + 2.0 * y * w, 2.0 * y * z - 2.0 * x * w, 1.0 - 2.0 * x * x - 2.0 * y * y,
+    ];
   }
 }

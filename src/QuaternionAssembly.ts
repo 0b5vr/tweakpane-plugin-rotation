@@ -1,7 +1,7 @@
 import { Quaternion } from './Quaternion';
 import type { PointNdAssembly } from '@tweakpane/core/dist/cjs/input-binding/common/model/point-nd';
 
-export const RotationInputRotationAssembly: PointNdAssembly<Quaternion> = {
+export const QuaternionAssembly: PointNdAssembly<Quaternion> = {
   toComponents: ( r: Quaternion ) => [
     r.x,
     r.y,

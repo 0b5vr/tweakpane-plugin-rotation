@@ -5,6 +5,7 @@ import { SVGLineStrip } from './SVGLineStrip';
 import { Vector3 } from './Vector3';
 import { createArcRotation } from './createArcRotation';
 import { createArcVerticesArray } from './createArcVerticesArray';
+import type { Rotation } from './Rotation';
 import type { RotationInputGizmoViewConfig } from './RotationInputGizmoViewConfig';
 
 const className = ClassName( 'rotationgizmo' );
@@ -46,7 +47,7 @@ function createLabel( doc: Document, circleClass: string, labelText: string ): S
 export class RotationInputGizmoView implements View {
   public readonly element: HTMLElement;
   public readonly padElement: HTMLDivElement;
-  public readonly value: Value<Quaternion>;
+  public readonly value: Value<Rotation>;
   public readonly xLabel: SVGGElement;
   public readonly yLabel: SVGGElement;
   public readonly zLabel: SVGGElement;
@@ -297,7 +298,7 @@ export class RotationInputGizmoView implements View {
   }
 
   private update_(): void {
-    const q = this.value.rawValue.normalized;
+    const q = this.value.rawValue.quat.normalized;
 
     // rotate axes
     this.xAxis_.setRotation( q );

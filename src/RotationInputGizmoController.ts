@@ -1,5 +1,6 @@
 import { Controller, PointerData, PointerHandler, PointerHandlerEvents, Value, ViewProps, createValue, isArrowKey } from '@tweakpane/core';
 import { Quaternion } from './Quaternion';
+import { Rotation } from './Rotation';
 import { RotationInputGizmoView } from './RotationInputGizmoView';
 import { Vector3 } from './Vector3';
 import { iikanjiEaseout } from './utils/iikanjiEaseout';
@@ -19,7 +20,7 @@ const QUAT_LEFT = new Quaternion( 0.0, INV_SQRT2, 0.0, INV_SQRT2 );
 const QUAT_BACK = new Quaternion( 0.0, 1.0, 0.0, 0.0 );
 
 export class RotationInputGizmoController implements Controller<RotationInputGizmoView> {
-  public readonly value: Value<Quaternion>;
+  public readonly value: Value<Rotation>;
   public readonly view: RotationInputGizmoView;
   public readonly viewProps: ViewProps;
   private readonly mode_: Value<'free' | 'angle-x' | 'angle-y' | 'angle-z' | 'angle-r' | 'auto'>;
@@ -27,7 +28,7 @@ export class RotationInputGizmoController implements Controller<RotationInputGiz
   private px_: number | null;
   private py_: number | null;
   private angleState_: {
-    initialRotation: Quaternion;
+    initialRotation: Rotation;
     initialAngle: number;
     axis: Vector3;
     reverseAngle: boolean;
@@ -124,7 +125,7 @@ export class RotationInputGizmoController implements Controller<RotationInputGiz
 
         const axis = new Vector3( dy / l, dx / l, 0.0 );
         const quat = Quaternion.fromAxisAngle( axis, l / 68.0 );
-        this.value.rawValue = quat.multiply( this.value.rawValue );
+        this.value.rawValue = this.value.rawValue.premultiply( quat );
       }
 
       this.px_ = x;
@@ -148,7 +149,7 @@ export class RotationInputGizmoController implements Controller<RotationInputGiz
 
         const angleDiff = -sanitizeAngle( angle - initialAngle );
         const quat = Quaternion.fromAxisAngle( axis, angleDiff );
-        this.value.rawValue = quat.multiply( initialRotation );
+        this.value.rawValue = initialRotation.premultiply( quat );
       }
     } else {
       const cx = d.bounds.width / 2.0;
@@ -160,7 +161,7 @@ export class RotationInputGizmoController implements Controller<RotationInputGiz
           mode === 'angle-y' ? VEC3_YP :
           VEC3_ZP;
 
-        const reverseAngle = axis.applyQuaternion( this.value.rawValue ).z > 0.0;
+        const reverseAngle = axis.applyQuaternion( this.value.rawValue.quat ).z > 0.0;
 
         this.angleState_ = {
           initialRotation: this.value.rawValue,
@@ -218,7 +219,7 @@ export class RotationInputGizmoController implements Controller<RotationInputGiz
   private autoRotate_( to: Quaternion ): void {
     this.mode_.rawValue = 'auto';
 
-    const from = this.value.rawValue.ban360s;
+    const from = this.value.rawValue;
     const beginTime = Date.now();
 
     const update = (): void => {

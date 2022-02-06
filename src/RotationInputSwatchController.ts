@@ -1,10 +1,10 @@
 import { RotationInputSwatchView } from './RotationInputSwatchView';
 import type { Controller, Value, ViewProps } from '@tweakpane/core';
-import type { Quaternion } from './Quaternion';
+import type { Rotation } from './Rotation';
 import type { RotationInputSwatchControllerConfig } from './RotationInputSwatchControllerConfig';
 
 export class RotationInputSwatchController implements Controller<RotationInputSwatchView> {
-  public readonly value: Value<Quaternion>;
+  public readonly value: Value<Rotation>;
   public readonly view: RotationInputSwatchView;
   public readonly viewProps: ViewProps;
 

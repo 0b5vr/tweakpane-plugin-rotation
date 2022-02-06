@@ -1,7 +1,7 @@
-import type { Quaternion } from './Quaternion';
+import { Rotation } from './Rotation';
 import type { Value, ViewProps } from '@tweakpane/core';
 
 export interface RotationInputSwatchControllerConfig {
-  value: Value<Quaternion>;
+  value: Value<Rotation>;
   viewProps: ViewProps;
 }

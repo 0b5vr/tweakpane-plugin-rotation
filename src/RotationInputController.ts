@@ -1,17 +1,16 @@
 import { Controller, Foldable, PointNdTextController, PopupController, Value, ViewProps, bindFoldable, connectValues, findNextTarget, forceCast, supportsTouch } from '@tweakpane/core';
 import { RotationInputGizmoController } from './RotationInputGizmoController';
-import { RotationInputRotationAssembly } from './RotationInputRotationAssembly';
 import { RotationInputSwatchController } from './RotationInputSwatchController';
 import { RotationInputView } from './RotationInputView';
-import type { Quaternion } from './Quaternion';
+import type { Rotation } from './Rotation';
 import type { RotationInputControllerConfig } from './RotationInputControllerConfig';
 
 export class RotationInputController implements Controller<RotationInputView> {
-  public readonly value: Value<Quaternion>;
+  public readonly value: Value<Rotation>;
   public readonly view: RotationInputView;
   public readonly viewProps: ViewProps;
   private readonly swatchC_: RotationInputSwatchController;
-  private readonly textC_: PointNdTextController<Quaternion>;
+  private readonly textC_: PointNdTextController<Rotation>;
   private readonly popC_: PopupController | null;
   private readonly gizmoC_: RotationInputGizmoController;
   private readonly foldable_: Foldable;
@@ -36,7 +35,7 @@ export class RotationInputController implements Controller<RotationInputView> {
     buttonElem.addEventListener( 'click', this.onButtonClick_ );
 
     this.textC_ = new PointNdTextController( doc, {
-      assembly: RotationInputRotationAssembly,
+      assembly: config.assembly as any, // TODO: resolve type puzzle
       axes: config.axes,
       parser: config.parser,
       value: this.value,

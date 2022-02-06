@@ -1,78 +1,66 @@
 import { BindingTarget, InputBindingPlugin, ParamsParsers, PointNdConstraint, TpError, parseNumber, parseParams, parsePickerLayout, parsePointDimensionParams } from '@tweakpane/core';
-import { Quaternion } from './Quaternion';
+import { Euler } from './Euler';
+import { EulerAssembly } from './EulerAssembly';
 import { RotationInputController } from './RotationInputController';
-import { RotationInputRotationAssembly } from './RotationInputRotationAssembly';
 import { createAxis } from './createAxis';
 import { createDimensionConstraint } from './createDimensionConstraint';
-import { isRotationInputRotation } from './isRotationInputRotation';
-import { parseRotationMode } from './parseRotationMode';
-import type { RotationInputPluginParams } from './RotationInputPluginParams';
+import { parseEuler } from './parseEuler';
+import { parseEulerOrder } from './parseEulerOrder';
+import type { RotationInputPluginEulerParams } from './RotationInputPluginEulerParams';
 
-export const RotationInputPlugin: InputBindingPlugin<
-Quaternion,
-Quaternion,
-RotationInputPluginParams
+export const RotationInputPluginEuler: InputBindingPlugin<
+Euler,
+Euler,
+RotationInputPluginEulerParams
 > = {
   id: 'rotation',
   type: 'input',
   css: '__css__',
 
   accept( exValue: unknown, params: Record<string, unknown> ) {
-    if ( !isRotationInputRotation( exValue ) ) {
-      return null;
-    }
-
     // Parse parameters object
     const p = ParamsParsers;
-    const result = parseParams<RotationInputPluginParams>( params, {
+    const result = parseParams<RotationInputPluginEulerParams>( params, {
       view: p.required.constant( 'rotation' ),
       label: p.optional.string,
       picker: p.optional.custom( parsePickerLayout ),
       expanded: p.optional.boolean,
-      rotationMode: p.optional.custom( parseRotationMode ),
+      rotationMode: p.required.constant( 'euler' ),
       x: p.optional.custom( parsePointDimensionParams ),
       y: p.optional.custom( parsePointDimensionParams ),
       z: p.optional.custom( parsePointDimensionParams ),
-      w: p.optional.custom( parsePointDimensionParams ),
+      order: p.optional.custom( parseEulerOrder ),
     } );
 
     return result ? {
-      initialValue: exValue,
+      initialValue: parseEuler( exValue, result.order ?? 'XYZ' ),
       params: result,
     } : null;
   },
 
   binding: {
-    reader( _args ) {
-      return ( exValue: unknown ): Quaternion => {
-        // TODO conversion
-
-        if ( isRotationInputRotation( exValue ) ) {
-          return exValue;
-        } else {
-          return new Quaternion();
-        }
+    reader( { params } ) {
+      return ( exValue: unknown ): Euler => {
+        return parseEuler( exValue, params.order ?? 'XYZ' );
       };
     },
 
     constraint( { params } ) {
       return new PointNdConstraint( {
-        assembly: RotationInputRotationAssembly,
+        assembly: EulerAssembly,
         components: [
           createDimensionConstraint( 'x' in params ? params.x : undefined ),
           createDimensionConstraint( 'y' in params ? params.y : undefined ),
           createDimensionConstraint( 'z' in params ? params.z : undefined ),
-          createDimensionConstraint( 'w' in params ? params.w : undefined ),
         ]
       } );
     },
 
     writer( _args ) {
-      return ( target: BindingTarget, inValue ) => {
+      return ( target: BindingTarget, inValue: Euler ) => {
         target.writeProperty( 'x', inValue.x );
         target.writeProperty( 'y', inValue.y );
         target.writeProperty( 'z', inValue.z );
-        target.writeProperty( 'w', inValue.w );
       };
     },
   },
@@ -82,7 +70,6 @@ RotationInputPluginParams
       throw TpError.shouldNeverHappen();
     }
 
-    const rotationMode = params.rotationMode ?? 'quaternion';
     const expanded = 'expanded' in params ? params.expanded : undefined;
     const picker = 'picker' in params ? params.picker : undefined;
 
@@ -91,9 +78,9 @@ RotationInputPluginParams
         createAxis( value.rawValue.x, constraint.components[ 0 ] ),
         createAxis( value.rawValue.y, constraint.components[ 1 ] ),
         createAxis( value.rawValue.z, constraint.components[ 2 ] ),
-        createAxis( value.rawValue.w, constraint.components[ 3 ] ),
       ],
-      rotationMode,
+      assembly: EulerAssembly,
+      rotationMode: 'euler',
       expanded: expanded ?? false,
       parser: parseNumber,
       pickerLayout: picker ?? 'popup',
