@@ -1,4 +1,4 @@
-import { Controller, PointerData, PointerHandler, PointerHandlerEvents, Value, ViewProps, createValue, isArrowKey } from '@tweakpane/core';
+import { Controller, PointerData, PointerHandler, PointerHandlerEvents, Value, ViewProps, createValue, getHorizontalStepKeys, getStepForKey, getVerticalStepKeys, isArrowKey } from '@tweakpane/core';
 import { Quaternion } from './Quaternion';
 import { Rotation } from './Rotation';
 import { RotationInputGizmoView } from './RotationInputGizmoView';
@@ -199,13 +199,14 @@ export class RotationInputGizmoController implements Controller<RotationInputGiz
       ev.preventDefault();
     }
 
-    // this.value.rawValue = new Point2d(
-    //   this.value.rawValue.x +
-    //     getStepForKey( this.baseSteps_[ 0 ], getHorizontalStepKeys( ev ) ),
-    //   this.value.rawValue.y +
-    //     getStepForKey( this.baseSteps_[ 1 ], getVerticalStepKeys( ev ) ) *
-    //       ( this.invertsY_ ? 1 : -1 ),
-    // );
+    const x = getStepForKey( 1.0, getHorizontalStepKeys( ev ) );
+    const y = getStepForKey( 1.0, getVerticalStepKeys( ev ) );
+
+    if ( x !== 0 || y !== 0 ) {
+      const axis = new Vector3( -y, x, 0.0 );
+      const quat = Quaternion.fromAxisAngle( axis, Math.PI / 16.0 );
+      this.value.rawValue = this.value.rawValue.premultiply( quat );
+    }
   }
 
   private changeModeIfNotAuto_(
