@@ -43,6 +43,7 @@ export class RotationInputController implements Controller<RotationInputView> {
     } );
 
     this.view = new RotationInputView( doc, {
+      rotationMode: config.rotationMode,
       foldable: this.foldable_,
       pickerLayout: config.pickerLayout,
     } );

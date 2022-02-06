@@ -1,11 +1,12 @@
-import { EulerOrder } from './EulerOrder';
 import { Quaternion } from './Quaternion';
 import { Rotation } from './Rotation';
 import { clamp } from './utils/clamp';
 import { sanitizeAngle } from './utils/sanitizeAngle';
+import type { EulerOrder } from './EulerOrder';
+import type { EulerUnit } from './EulerUnit';
 
 export class Euler extends Rotation {
-  public static fromQuaternion( quat: Quaternion, order: EulerOrder ): Euler {
+  public static fromQuaternion( quat: Quaternion, order: EulerOrder, unit: EulerUnit ): Euler {
     const m = quat.toMat3();
 
     const [ i, j, k, sign ] =
@@ -36,21 +37,23 @@ export class Euler extends Rotation {
       result[ k ] = sanitizeAngle( result[ k ] + Math.PI );
     }
 
-    return new Euler( ...result, order );
+    return new Euler( ...result, order ).reunit( unit );
   }
 
   public x: number;
   public y: number;
   public z: number;
   public order: EulerOrder;
+  public unit: EulerUnit;
 
-  public constructor( x?: number, y?: number, z?: number, order?: EulerOrder ) {
+  public constructor( x?: number, y?: number, z?: number, order?: EulerOrder, unit?: EulerUnit ) {
     super();
 
     this.x = x ?? 0.0;
     this.y = y ?? 0.0;
     this.z = z ?? 0.0;
     this.order = order ?? 'XYZ';
+    this.unit = unit ?? 'rad';
   }
 
   public get quat(): Quaternion {
@@ -61,8 +64,8 @@ export class Euler extends Rotation {
     return [ this.x, this.y, this.z ];
   }
 
-  public toEuler( order: EulerOrder ): Euler {
-    return this.reorder( order );
+  public toEuler( order: EulerOrder, unit: EulerUnit ): Euler {
+    return this.reorder( order ).reunit( unit );
   }
 
   public format( r: Rotation ): Euler {
@@ -70,7 +73,7 @@ export class Euler extends Rotation {
       return r.reorder( this.order );
     }
 
-    return r.toEuler( this.order );
+    return r.toEuler( this.order, this.unit );
   }
 
   public reorder( order: EulerOrder ): Euler {
@@ -78,6 +81,30 @@ export class Euler extends Rotation {
       return this;
     }
 
-    return this.quat.toEuler( order );
+    return this.quat.toEuler( order, this.unit );
+  }
+
+  public reunit( unit: EulerUnit ): Euler {
+    const prev2Rad = {
+      deg: Math.PI / 180.0,
+      rad: 1.0,
+      turn: 2.0 * Math.PI,
+    }[ this.unit ];
+
+    const rad2Next = {
+      deg: 180.0 / Math.PI,
+      rad: 1.0,
+      turn: 0.5 / Math.PI,
+    }[ unit ];
+
+    const prev2Next = prev2Rad * rad2Next;
+
+    return new Euler(
+      prev2Next * this.x,
+      prev2Next * this.y,
+      prev2Next * this.z,
+      this.order,
+      unit,
+    );
   }
 }

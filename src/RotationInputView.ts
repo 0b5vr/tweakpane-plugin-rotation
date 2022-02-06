@@ -22,6 +22,10 @@ export class RotationInputView implements View {
       valueToClassName( this.element, className( undefined, 'cpl' ) ),
     );
 
+    if ( config.rotationMode === 'quaternion' ) {
+      this.element.classList.add( className( 'quat' ) );
+    }
+
     const headElem = doc.createElement( 'div' );
     headElem.classList.add( className( 'h' ) );
     this.element.appendChild( headElem );

@@ -2,7 +2,7 @@ import { BindingTarget, InputBindingPlugin, ParamsParsers, PointNdConstraint, Tp
 import { Quaternion } from './Quaternion';
 import { QuaternionAssembly } from './QuaternionAssembly';
 import { RotationInputController } from './RotationInputController';
-import { createAxis } from './createAxis';
+import { createAxisQuaternion } from './createAxisQuaternion';
 import { createDimensionConstraint } from './createDimensionConstraint';
 import { parseQuaternion } from './parseQuaternion';
 import type { RotationInputPluginQuaternionParams } from './RotationInputPluginQuaternionParams';
@@ -76,10 +76,10 @@ RotationInputPluginQuaternionParams
 
     return new RotationInputController( document, {
       axes: [
-        createAxis( value.rawValue.x, constraint.components[ 0 ] ),
-        createAxis( value.rawValue.y, constraint.components[ 1 ] ),
-        createAxis( value.rawValue.z, constraint.components[ 2 ] ),
-        createAxis( value.rawValue.w, constraint.components[ 3 ] ),
+        createAxisQuaternion( constraint.components[ 0 ] ),
+        createAxisQuaternion( constraint.components[ 1 ] ),
+        createAxisQuaternion( constraint.components[ 2 ] ),
+        createAxisQuaternion( constraint.components[ 3 ] ),
       ],
       assembly: QuaternionAssembly,
       rotationMode: 'quaternion',

@@ -1,11 +1,12 @@
 import { Euler } from './Euler';
 import { EulerOrder } from './EulerOrder';
+import { EulerUnit } from './EulerUnit';
 import { Quaternion } from './Quaternion';
 
 export abstract class Rotation {
   public abstract get quat(): Quaternion;
 
-  public abstract toEuler( order: EulerOrder ): Euler;
+  public abstract toEuler( order: EulerOrder, unit: EulerUnit ): Euler;
 
   /**
    * Convert the input rotation to the format compatible with this rotation.

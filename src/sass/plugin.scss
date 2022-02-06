@@ -4,6 +4,10 @@
 .#{$prefix}-rotationv {
   position: relative;
 
+  &_quat .tp-txtv_i {
+    padding-left: 0;
+  }
+
   &_root {
     background-color: var(--mo-bg);
     width: 100%;

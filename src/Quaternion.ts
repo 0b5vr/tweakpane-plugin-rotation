@@ -1,5 +1,6 @@
 import { Euler } from './Euler';
 import { EulerOrder } from './EulerOrder';
+import { EulerUnit } from './EulerUnit';
 import { Rotation } from './Rotation';
 import { Vector3 } from './Vector3';
 
@@ -16,7 +17,9 @@ export class Quaternion extends Rotation {
     );
   }
 
-  public static fromEuler( euler: Euler ): Quaternion {
+  public static fromEuler( eulerr: Euler ): Quaternion {
+    const euler = eulerr.reunit( 'rad' );
+
     const [ i, j, k, sign ] =
       euler.order === 'XYZ' ? [ 0, 1, 2, 1 ] :
       euler.order === 'XZY' ? [ 0, 2, 1, -1 ] :
@@ -130,8 +133,8 @@ export class Quaternion extends Rotation {
     return [ this.x, this.y, this.z, this.w ];
   }
 
-  public toEuler( order: EulerOrder ): Euler {
-    return Euler.fromQuaternion( this, order );
+  public toEuler( order: EulerOrder, unit: EulerUnit ): Euler {
+    return Euler.fromQuaternion( this, order, unit );
   }
 
   public get lengthSq(): number {

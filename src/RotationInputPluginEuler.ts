@@ -1,11 +1,12 @@
 import { BindingTarget, InputBindingPlugin, ParamsParsers, PointNdConstraint, TpError, parseNumber, parseParams, parsePickerLayout, parsePointDimensionParams } from '@tweakpane/core';
 import { Euler } from './Euler';
 import { RotationInputController } from './RotationInputController';
-import { createAxis } from './createAxis';
+import { createAxisEuler } from './createAxisEuler';
 import { createDimensionConstraint } from './createDimensionConstraint';
 import { createEulerAssembly } from './createEulerAssembly';
 import { parseEuler } from './parseEuler';
 import { parseEulerOrder } from './parseEulerOrder';
+import { parseEulerUnit } from './parseEulerUnit';
 import type { RotationInputPluginEulerParams } from './RotationInputPluginEulerParams';
 
 export const RotationInputPluginEuler: InputBindingPlugin<
@@ -30,10 +31,11 @@ RotationInputPluginEulerParams
       y: p.optional.custom( parsePointDimensionParams ),
       z: p.optional.custom( parsePointDimensionParams ),
       order: p.optional.custom( parseEulerOrder ),
+      unit: p.optional.custom( parseEulerUnit ),
     } );
 
     return result ? {
-      initialValue: parseEuler( exValue, result.order ?? 'XYZ' ),
+      initialValue: parseEuler( exValue, result.order ?? 'XYZ', result.unit ?? 'rad' ),
       params: result,
     } : null;
   },
@@ -41,13 +43,13 @@ RotationInputPluginEulerParams
   binding: {
     reader( { params } ) {
       return ( exValue: unknown ): Euler => {
-        return parseEuler( exValue, params.order ?? 'XYZ' );
+        return parseEuler( exValue, params.order ?? 'XYZ', params.unit ?? 'rad' );
       };
     },
 
     constraint( { params } ) {
       return new PointNdConstraint( {
-        assembly: createEulerAssembly( params.order ?? 'XYZ' ),
+        assembly: createEulerAssembly( params.order ?? 'XYZ', params.unit ?? 'rad' ),
         components: [
           createDimensionConstraint( 'x' in params ? params.x : undefined ),
           createDimensionConstraint( 'y' in params ? params.y : undefined ),
@@ -73,13 +75,20 @@ RotationInputPluginEulerParams
     const expanded = 'expanded' in params ? params.expanded : undefined;
     const picker = 'picker' in params ? params.picker : undefined;
 
+    const unit = params.unit ?? 'rad';
+    const digits = {
+      rad: 2,
+      deg: 0,
+      turn: 2,
+    }[ unit ];
+
     return new RotationInputController( document, {
       axes: [
-        createAxis( value.rawValue.x, constraint.components[ 0 ] ),
-        createAxis( value.rawValue.y, constraint.components[ 1 ] ),
-        createAxis( value.rawValue.z, constraint.components[ 2 ] ),
+        createAxisEuler( digits, constraint.components[ 0 ] ),
+        createAxisEuler( digits, constraint.components[ 1 ] ),
+        createAxisEuler( digits, constraint.components[ 2 ] ),
       ],
-      assembly: createEulerAssembly( params.order ?? 'XYZ' ),
+      assembly: createEulerAssembly( params.order ?? 'XYZ', unit ),
       rotationMode: 'euler',
       expanded: expanded ?? false,
       parser: parseNumber,
