@@ -44,32 +44,24 @@
 }
 
 .#{$prefix}-rotationswatchv {
-  &_sw {
-    background-color: var(--btn-bg);
-    border-radius: var(--elm-br);
-    box-sizing: border-box;
-    color: var(--in-fg);
-    font-family: inherit;
-    height: var(--bld-us);
-    line-height: var(--bld-us);
-    min-width: 0;
-    width: 100%;
+  path {
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   &_b {
-    appearance: none;
-    background-color: transparent;
-    border-width: 0;
-    cursor: pointer;
-    display: block;
+    @extend %button;
+
     height: var(--bld-us);
-    left: 0;
-    margin: 0;
-    outline: none;
-    padding: 0;
-    position: absolute;
-    top: 0;
+    margin-right: 4px;
+    position: relative;
     width: var(--bld-us);
+  }
+
+  &_arc {
+    fill: none;
+    stroke: var(--btn-fg);
+    stroke-width: 1.5px;
   }
 }
 
