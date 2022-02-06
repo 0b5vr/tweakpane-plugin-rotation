@@ -10,7 +10,7 @@ export function createAxisQuaternion(
     textProps: ValueMap.fromObject( {
       draggingScale: 0.01,
       formatter: ( value: number ): string => {
-        if ( Math.abs( value ) < 1.0 ) {
+        if ( Math.abs( value ) < 0.995 ) {
           return value.toFixed( 2 ).replace( '0.', '.' );
         } else {
           return value.toFixed( 1 );
