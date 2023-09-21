@@ -1,4 +1,4 @@
-import type { EulerUnit } from './EulerUnit';
+import type { EulerUnit } from './EulerUnit.js';
 
 export function parseEulerUnit( value: unknown ): EulerUnit | undefined {
   switch ( value ) {

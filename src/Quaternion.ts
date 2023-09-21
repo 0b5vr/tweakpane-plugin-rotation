@@ -1,8 +1,8 @@
-import { Euler } from './Euler';
-import { EulerOrder } from './EulerOrder';
-import { EulerUnit } from './EulerUnit';
-import { Rotation } from './Rotation';
-import { Vector3 } from './Vector3';
+import { Euler } from './Euler.js';
+import { EulerOrder } from './EulerOrder.js';
+import { EulerUnit } from './EulerUnit.js';
+import { Rotation } from './Rotation.js';
+import { Vector3 } from './Vector3.js';
 
 export class Quaternion extends Rotation {
   public static fromAxisAngle( axis: Vector3, angle: number ): Quaternion {

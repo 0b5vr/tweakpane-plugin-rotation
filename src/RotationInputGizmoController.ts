@@ -1,12 +1,12 @@
 import { Controller, PointerData, PointerHandler, PointerHandlerEvents, Value, ViewProps, createValue, getHorizontalStepKeys, getStepForKey, getVerticalStepKeys, isArrowKey } from '@tweakpane/core';
-import { Quaternion } from './Quaternion';
-import { Rotation } from './Rotation';
-import { RotationInputGizmoView } from './RotationInputGizmoView';
-import { Vector3 } from './Vector3';
-import { iikanjiEaseout } from './utils/iikanjiEaseout';
-import { linearstep } from './utils/linearstep';
-import { sanitizeAngle } from './utils/sanitizeAngle';
-import type { RotationInputGizmoControllerConfig } from './RotationInputGizmoControllerConfig';
+import { Quaternion } from './Quaternion.js';
+import { Rotation } from './Rotation.js';
+import { RotationInputGizmoView } from './RotationInputGizmoView.js';
+import { Vector3 } from './Vector3.js';
+import { iikanjiEaseout } from './utils/iikanjiEaseout.js';
+import { linearstep } from './utils/linearstep.js';
+import { sanitizeAngle } from './utils/sanitizeAngle.js';
+import type { RotationInputGizmoControllerConfig } from './RotationInputGizmoControllerConfig.js';
 
 const INV_SQRT2 = 1.0 / Math.sqrt( 2.0 );
 const VEC3_XP = new Vector3( 1.0, 0.0, 0.0 );

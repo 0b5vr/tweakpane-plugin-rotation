@@ -1,4 +1,4 @@
-import type { EulerOrder } from './EulerOrder';
+import type { EulerOrder } from './EulerOrder.js';
 
 export function parseEulerOrder( value: unknown ): EulerOrder | undefined {
   switch ( value ) {

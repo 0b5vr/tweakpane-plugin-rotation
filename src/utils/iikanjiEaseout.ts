@@ -1,4 +1,4 @@
-import { saturate } from './saturate';
+import { saturate } from './saturate.js';
 
 /**
  * hand-picked random polynomial that looks cool

@@ -1,9 +1,10 @@
 import { Controller, Foldable, PointNdTextController, PopupController, Value, ViewProps, bindFoldable, connectValues, findNextTarget, forceCast, supportsTouch } from '@tweakpane/core';
-import { RotationInputGizmoController } from './RotationInputGizmoController';
-import { RotationInputSwatchController } from './RotationInputSwatchController';
-import { RotationInputView } from './RotationInputView';
-import type { Rotation } from './Rotation';
-import type { RotationInputControllerConfig } from './RotationInputControllerConfig';
+import { RotationInputGizmoController } from './RotationInputGizmoController.js';
+import { RotationInputSwatchController } from './RotationInputSwatchController.js';
+import { RotationInputView } from './RotationInputView.js';
+import type { PointNdAssembly } from '@tweakpane/core';
+import type { Rotation } from './Rotation.js';
+import type { RotationInputControllerConfig } from './RotationInputControllerConfig.js';
 
 export class RotationInputController implements Controller<RotationInputView> {
   public readonly value: Value<Rotation>;
@@ -35,7 +36,7 @@ export class RotationInputController implements Controller<RotationInputView> {
     buttonElem.addEventListener( 'click', this.onButtonClick_ );
 
     this.textC_ = new PointNdTextController( doc, {
-      assembly: config.assembly as any, // TODO: resolve type puzzle
+      assembly: config.assembly as unknown as PointNdAssembly<Rotation>, // TODO: resolve type puzzle
       axes: config.axes,
       parser: config.parser,
       value: this.value,
@@ -72,11 +73,11 @@ export class RotationInputController implements Controller<RotationInputView> {
       this.view.element.appendChild( this.popC_.view.element );
       this.popC_.view.element.appendChild( gizmoC.view.element );
 
-      connectValues( {
+      connectValues<any, any>( {
         primary: this.foldable_.value( 'expanded' ),
         secondary: this.popC_.shows,
-        forward: ( p ) => p.rawValue,
-        backward: ( _, s ) => s.rawValue,
+        forward: ( p ) => p,
+        backward: ( _, s ) => s,
       } );
     } else if ( this.view.pickerElement ) {
       this.view.pickerElement.appendChild( this.gizmoC_.view.element );

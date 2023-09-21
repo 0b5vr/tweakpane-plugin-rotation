@@ -1,25 +1,23 @@
-import { BindingTarget, InputBindingPlugin, ParamsParsers, PointNdConstraint, TpError, parseNumber, parseParams, parsePickerLayout, parsePointDimensionParams } from '@tweakpane/core';
-import { Quaternion } from './Quaternion';
-import { QuaternionAssembly } from './QuaternionAssembly';
-import { RotationInputController } from './RotationInputController';
-import { createAxisQuaternion } from './createAxisQuaternion';
-import { createDimensionConstraint } from './createDimensionConstraint';
-import { parseQuaternion } from './parseQuaternion';
-import type { RotationInputPluginQuaternionParams } from './RotationInputPluginQuaternionParams';
+import { BindingTarget, InputBindingPlugin, PointNdConstraint, TpError, ValueController, createPlugin, parseNumber, parsePickerLayout,  parsePointDimensionParams, parseRecord } from '@tweakpane/core';
+import { Quaternion } from './Quaternion.js';
+import { QuaternionAssembly } from './QuaternionAssembly.js';
+import { RotationInputController } from './RotationInputController.js';
+import { createAxisQuaternion } from './createAxisQuaternion.js';
+import { createDimensionConstraint } from './createDimensionConstraint.js';
+import { parseQuaternion } from './parseQuaternion.js';
+import type { RotationInputPluginQuaternionParams } from './RotationInputPluginQuaternionParams.js';
 
 export const RotationInputPluginQuaternion: InputBindingPlugin<
 Quaternion,
 Quaternion,
 RotationInputPluginQuaternionParams
-> = {
+> = createPlugin( {
   id: 'rotation',
   type: 'input',
-  css: '__css__',
 
   accept( exValue: unknown, params: Record<string, unknown> ) {
     // Parse parameters object
-    const p = ParamsParsers;
-    const result = parseParams<RotationInputPluginQuaternionParams>( params, {
+    const result = parseRecord<RotationInputPluginQuaternionParams>( params, ( p ) => ( {
       view: p.required.constant( 'rotation' ),
       label: p.optional.string,
       picker: p.optional.custom( parsePickerLayout ),
@@ -29,7 +27,7 @@ RotationInputPluginQuaternionParams
       y: p.optional.custom( parsePointDimensionParams ),
       z: p.optional.custom( parsePointDimensionParams ),
       w: p.optional.custom( parsePointDimensionParams ),
-    } );
+    } ) );
 
     return result ? {
       initialValue: parseQuaternion( exValue ),
@@ -88,6 +86,6 @@ RotationInputPluginQuaternionParams
       pickerLayout: picker ?? 'popup',
       value,
       viewProps: viewProps,
-    } );
+    } )  as unknown as ValueController<Quaternion>; // TODO;
   },
-};
+} );

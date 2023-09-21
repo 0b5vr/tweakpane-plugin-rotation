@@ -1,12 +1,12 @@
 import { ClassName, SVG_NS, Value, View } from '@tweakpane/core';
-import { PointProjector } from './PointProjector';
-import { Quaternion } from './Quaternion';
-import { Rotation } from './Rotation';
-import { SVGLineStrip } from './SVGLineStrip';
-import { Vector3 } from './Vector3';
-import { createArcRotation } from './createArcRotation';
-import { createArcVerticesArray } from './createArcVerticesArray';
-import type { RotationInputSwatchViewConfig } from './RotationInputSwatchViewConfig';
+import { PointProjector } from './PointProjector.js';
+import { Quaternion } from './Quaternion.js';
+import { Rotation } from './Rotation.js';
+import { SVGLineStrip } from './SVGLineStrip.js';
+import { Vector3 } from './Vector3.js';
+import { createArcRotation } from './createArcRotation.js';
+import { createArcVerticesArray } from './createArcVerticesArray.js';
+import type { RotationInputSwatchViewConfig } from './RotationInputSwatchViewConfig.js';
 
 const className = ClassName( 'rotationswatch' );
 

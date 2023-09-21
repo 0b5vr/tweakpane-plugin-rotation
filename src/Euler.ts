@@ -1,9 +1,9 @@
-import { Quaternion } from './Quaternion';
-import { Rotation } from './Rotation';
-import { clamp } from './utils/clamp';
-import { sanitizeAngle } from './utils/sanitizeAngle';
-import type { EulerOrder } from './EulerOrder';
-import type { EulerUnit } from './EulerUnit';
+import { Quaternion } from './Quaternion.js';
+import { Rotation } from './Rotation.js';
+import { clamp } from './utils/clamp.js';
+import { sanitizeAngle } from './utils/sanitizeAngle.js';
+import type { EulerOrder } from './EulerOrder.js';
+import type { EulerUnit } from './EulerUnit.js';
 
 export class Euler extends Rotation {
   public static fromQuaternion( quat: Quaternion, order: EulerOrder, unit: EulerUnit ): Euler {

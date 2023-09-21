@@ -1,4 +1,4 @@
-import type { Quaternion } from './Quaternion';
+import type { Quaternion } from './Quaternion.js';
 
 export function isRotationInputRotation( input: unknown ): input is Quaternion {
   if ( typeof input !== 'object' ) { return false; }

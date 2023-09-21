@@ -1,12 +1,12 @@
 import { ClassName, SVG_NS, Value, View } from '@tweakpane/core';
-import { PointProjector } from './PointProjector';
-import { Quaternion } from './Quaternion';
-import { SVGLineStrip } from './SVGLineStrip';
-import { Vector3 } from './Vector3';
-import { createArcRotation } from './createArcRotation';
-import { createArcVerticesArray } from './createArcVerticesArray';
-import type { Rotation } from './Rotation';
-import type { RotationInputGizmoViewConfig } from './RotationInputGizmoViewConfig';
+import { PointProjector } from './PointProjector.js';
+import { Quaternion } from './Quaternion.js';
+import { SVGLineStrip } from './SVGLineStrip.js';
+import { Vector3 } from './Vector3.js';
+import { createArcRotation } from './createArcRotation.js';
+import { createArcVerticesArray } from './createArcVerticesArray.js';
+import type { Rotation } from './Rotation.js';
+import type { RotationInputGizmoViewConfig } from './RotationInputGizmoViewConfig.js';
 
 const className = ClassName( 'rotationgizmo' );
 
