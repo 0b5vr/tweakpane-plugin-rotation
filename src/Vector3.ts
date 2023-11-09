@@ -1,4 +1,4 @@
-import { Quaternion } from './Quaternion';
+import { Quaternion } from './Quaternion.js';
 
 export class Vector3 {
   public x: number;

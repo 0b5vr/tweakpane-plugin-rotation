@@ -83,7 +83,7 @@ const params = {
 }
 
 // euler
-const guiEuler = pane.addInput(params, 'euler', {
+const guiEuler = pane.addBinding(params, 'euler', {
   view: 'rotation',
   rotationMode: 'euler',
   order: 'XYZ', // Extrinsic rotation order. optional, 'XYZ' by default
@@ -91,7 +91,7 @@ const guiEuler = pane.addInput(params, 'euler', {
 });
 
 // quaternion
-const guiQuat = pane.addInput(params, 'quat', {
+const guiQuat = pane.addBinding(params, 'quat', {
   view: 'rotation',
   rotationMode: 'quaternion', // optional, 'quaternion' by default
   picker: 'inline', // or 'popup'. optional, 'popup' by default
@@ -109,11 +109,12 @@ guiEuler.on('change', ({ value }) => {
     </main>
 
     <script src="https://unpkg.com/three@0.137.0"></script>
-    <script src="https://unpkg.com/tweakpane@3.0.7"></script>
     <script src="https://www.unpkg.com/codemirror@5.62.3/lib/codemirror.js"></script>
     <script src="https://www.unpkg.com/codemirror@5.62.3/mode/javascript/javascript.js"></script>
-    <script src="./dist/tweakpane-plugin-rotation.js"></script>
-    <script>
+    <script type="module">
+      import * as Tweakpane from 'https://unpkg.com/tweakpane@4.0.1/dist/tweakpane.js';
+      import * as TweakpaneRotationInputPlugin from './dist/tweakpane-plugin-rotation.js';
+
       const pane = new Tweakpane.Pane();
 
       pane.registerPlugin( TweakpaneRotationInputPlugin );
@@ -123,13 +124,13 @@ guiEuler.on('change', ({ value }) => {
         sphere: { x: 0.24, y: 0.13, z: -0.23, w: 0.93 },
       };
 
-      const guiTitle = pane.addInput( params, 'title', {
+      const guiTitle = pane.addBinding( params, 'title', {
         view: 'rotation',
         rotationMode: 'euler',
         unit: 'deg',
       } );
 
-      const guiSphere = pane.addInput( params, 'sphere', {
+      const guiSphere = pane.addBinding( params, 'sphere', {
         view: 'rotation',
         picker: 'inline',
         expanded: true,

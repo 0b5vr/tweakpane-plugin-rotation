@@ -1,5 +1,5 @@
 import type { PickerLayout, Value, ViewProps } from '@tweakpane/core';
-import type { Rotation } from './Rotation';
+import type { Rotation } from './Rotation.js';
 
 export interface RotationInputGizmoViewConfig {
   value: Value<Rotation>;

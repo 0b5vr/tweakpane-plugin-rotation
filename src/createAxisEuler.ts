@@ -1,5 +1,5 @@
 import { Constraint, ValueMap, createNumberFormatter } from '@tweakpane/core';
-import { RotationInputAxis } from './RotationInputAxis';
+import { RotationInputAxis } from './RotationInputAxis.js';
 
 export function createAxisEuler(
   digits: number,
@@ -11,8 +11,9 @@ export function createAxisEuler(
     baseStep: step,
     constraint: constraint,
     textProps: ValueMap.fromObject( {
-      draggingScale: step,
       formatter: createNumberFormatter( digits ),
+      keyScale: step,
+      pointerScale: step,
     } ),
   };
 }

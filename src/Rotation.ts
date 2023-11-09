@@ -1,7 +1,7 @@
-import { Euler } from './Euler';
-import { EulerOrder } from './EulerOrder';
-import { EulerUnit } from './EulerUnit';
-import { Quaternion } from './Quaternion';
+import { Euler } from './Euler.js';
+import { EulerOrder } from './EulerOrder.js';
+import { EulerUnit } from './EulerUnit.js';
+import { Quaternion } from './Quaternion.js';
 
 export abstract class Rotation {
   public abstract get quat(): Quaternion;

@@ -1,27 +1,26 @@
-import { BindingTarget, InputBindingPlugin, ParamsParsers, PointNdConstraint, TpError, parseNumber, parseParams, parsePickerLayout, parsePointDimensionParams } from '@tweakpane/core';
-import { Euler } from './Euler';
-import { RotationInputController } from './RotationInputController';
-import { createAxisEuler } from './createAxisEuler';
-import { createDimensionConstraint } from './createDimensionConstraint';
-import { createEulerAssembly } from './createEulerAssembly';
-import { parseEuler } from './parseEuler';
-import { parseEulerOrder } from './parseEulerOrder';
-import { parseEulerUnit } from './parseEulerUnit';
-import type { RotationInputPluginEulerParams } from './RotationInputPluginEulerParams';
+import { BindingTarget, InputBindingPlugin, PointNdConstraint, TpError, createPlugin, parseNumber, parsePickerLayout, parsePointDimensionParams, parseRecord } from '@tweakpane/core';
+import { Euler } from './Euler.js';
+import { RotationInputController } from './RotationInputController.js';
+import { createAxisEuler } from './createAxisEuler.js';
+import { createDimensionConstraint } from './createDimensionConstraint.js';
+import { createEulerAssembly } from './createEulerAssembly.js';
+import { parseEuler } from './parseEuler.js';
+import { parseEulerOrder } from './parseEulerOrder.js';
+import { parseEulerUnit } from './parseEulerUnit.js';
+import type { RotationInputPluginEulerParams } from './RotationInputPluginEulerParams.js';
+import type { ValueController } from '@tweakpane/core';
 
 export const RotationInputPluginEuler: InputBindingPlugin<
 Euler,
 Euler,
 RotationInputPluginEulerParams
-> = {
+> = createPlugin( {
   id: 'rotation',
   type: 'input',
-  css: '__css__',
 
   accept( exValue: unknown, params: Record<string, unknown> ) {
     // Parse parameters object
-    const p = ParamsParsers;
-    const result = parseParams<RotationInputPluginEulerParams>( params, {
+    const result = parseRecord<RotationInputPluginEulerParams>( params, ( p ) => ( {
       view: p.required.constant( 'rotation' ),
       label: p.optional.string,
       picker: p.optional.custom( parsePickerLayout ),
@@ -32,7 +31,7 @@ RotationInputPluginEulerParams
       z: p.optional.custom( parsePointDimensionParams ),
       order: p.optional.custom( parseEulerOrder ),
       unit: p.optional.custom( parseEulerUnit ),
-    } );
+    } ) );
 
     return result ? {
       initialValue: parseEuler( exValue, result.order ?? 'XYZ', result.unit ?? 'rad' ),
@@ -95,6 +94,6 @@ RotationInputPluginEulerParams
       pickerLayout: picker ?? 'popup',
       value,
       viewProps: viewProps,
-    } );
+    } ) as unknown as ValueController<Euler>; // TODO: resolve type puzzle
   },
-};
+} );

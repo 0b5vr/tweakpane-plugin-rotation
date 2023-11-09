@@ -1,17 +1,17 @@
+/* eslint-env node */
+
 import Alias from '@rollup/plugin-alias';
 import {nodeResolve} from '@rollup/plugin-node-resolve';
 import Replace from '@rollup/plugin-replace';
 import Typescript from '@rollup/plugin-typescript';
 import Autoprefixer from 'autoprefixer';
-import NodeSass from 'node-sass';
 import Postcss from 'postcss';
 import Cleanup from 'rollup-plugin-cleanup';
 import {terser as Terser} from 'rollup-plugin-terser';
-
-import Package from './package.json';
+import Sass from 'sass';
 
 async function compileCss() {
-	const css = NodeSass.renderSync({
+	const css = Sass.renderSync({
 		file: 'src/sass/plugin.scss',
 		outputStyle: 'compressed',
 	}).css.toString();
@@ -24,16 +24,17 @@ async function compileCss() {
 
 function getPlugins(css, shouldMinify) {
 	const plugins = [
-		// Use ES6 source files to avoid CommonJS transpiling
 		Alias({
 			entries: [
 				{
 					find: '@tweakpane/core',
-					replacement: './node_modules/@tweakpane/core/dist/es6/index.js',
-				},
-			],
+					replacement: './node_modules/@tweakpane/core/dist/index.js'
+				}
+			]
 		}),
-		Typescript(),
+		Typescript({
+			tsconfig: 'src/tsconfig.json'
+		}),
 		nodeResolve(),
 		Replace({
 			__css__: css,
@@ -63,11 +64,10 @@ export default async () => {
 		external: ['tweakpane'],
 		output: {
 			file: `dist/${distName}${postfix}.js`,
-			format: 'umd',
+			format: 'esm',
 			globals: {
 				tweakpane: 'Tweakpane',
 			},
-			name: 'TweakpaneRotationInputPlugin',
 		},
 		plugins: getPlugins(css, production),
 

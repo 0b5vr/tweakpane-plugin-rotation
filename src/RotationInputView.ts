@@ -1,5 +1,5 @@
 import { ClassName, View, bindValueMap, valueToClassName } from '@tweakpane/core';
-import type { RotationInputViewConfig } from './RotationInputViewConfig';
+import type { RotationInputViewConfig } from './RotationInputViewConfig.js';
 
 const className = ClassName( 'rotation' );
 

@@ -1,10 +1,10 @@
-import type { Euler } from './Euler';
+import type { Euler } from './Euler.js';
 import type { Parser, PickerLayout, Value, ViewProps } from '@tweakpane/core';
-import type { PointNdAssembly } from '@tweakpane/core/dist/cjs/input-binding/common/model/point-nd';
-import type { Quaternion } from './Quaternion';
-import type { Rotation } from './Rotation';
-import type { RotationInputAxis } from './RotationInputAxis';
-import type { RotationInputRotationMode } from './RotationInputRotationMode';
+import type { PointNdAssembly } from '@tweakpane/core/dist/input-binding/common/model/point-nd.js';
+import type { Quaternion } from './Quaternion.js';
+import type { Rotation } from './Rotation.js';
+import type { RotationInputAxis } from './RotationInputAxis.js';
+import type { RotationInputRotationMode } from './RotationInputRotationMode.js';
 
 export interface RotationInputControllerConfig {
   axes: RotationInputAxis[];

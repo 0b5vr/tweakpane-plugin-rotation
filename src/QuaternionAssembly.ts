@@ -1,5 +1,5 @@
-import { Quaternion } from './Quaternion';
-import type { PointNdAssembly } from '@tweakpane/core/dist/cjs/input-binding/common/model/point-nd';
+import { Quaternion } from './Quaternion.js';
+import type { PointNdAssembly } from '@tweakpane/core/dist/input-binding/common/model/point-nd.js';
 
 export const QuaternionAssembly: PointNdAssembly<Quaternion> = {
   toComponents: ( r: Quaternion ) => [

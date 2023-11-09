@@ -1,5 +1,5 @@
 import { Constraint, ValueMap } from '@tweakpane/core';
-import { RotationInputAxis } from './RotationInputAxis';
+import { RotationInputAxis } from './RotationInputAxis.js';
 
 export function createAxisQuaternion(
   constraint: Constraint<number> | undefined,
@@ -8,7 +8,6 @@ export function createAxisQuaternion(
     baseStep: 0.01,
     constraint: constraint,
     textProps: ValueMap.fromObject( {
-      draggingScale: 0.01,
       formatter: ( value: number ): string => {
         if ( Math.abs( value ) < 0.995 ) {
           return value.toFixed( 2 ).replace( '0.', '.' );
@@ -16,6 +15,8 @@ export function createAxisQuaternion(
           return value.toFixed( 1 );
         }
       },
+      keyScale: 0.01,
+      pointerScale: 0.01,
     } ),
   };
 }

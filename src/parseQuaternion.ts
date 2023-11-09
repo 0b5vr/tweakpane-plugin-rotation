@@ -1,4 +1,4 @@
-import { Quaternion } from './Quaternion';
+import { Quaternion } from './Quaternion.js';
 
 export function parseQuaternion( exValue: unknown ): Quaternion {
   if (
