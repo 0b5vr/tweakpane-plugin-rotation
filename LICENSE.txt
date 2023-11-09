@@ -1,4 +1,4 @@
-Copyright (c) 2022 0b5vr <0b5vr@0b5vr.com>
+Copyright (c) 2022-2023 0b5vr <0b5vr@0b5vr.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
