@@ -1,6 +1,6 @@
 {
   "name": "@0b5vr/tweakpane-plugin-rotation",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "3D rotation input plugin for Tweakpane",
   "main": "dist/tweakpane-plugin-rotation.js",
   "type": "module",
