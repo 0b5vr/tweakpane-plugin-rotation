@@ -1,2 +1,0 @@
-import { Quaternion } from './Quaternion';
-export declare function isRotationInputRotation(input: unknown): input is Quaternion;

@@ -1,5 +1,5 @@
 import { View } from '@tweakpane/core';
-import type { RotationInputViewConfig } from './RotationInputViewConfig';
+import type { RotationInputViewConfig } from './RotationInputViewConfig.js';
 export declare class RotationInputView implements View {
     readonly element: HTMLElement;
     readonly swatchElement: HTMLElement;

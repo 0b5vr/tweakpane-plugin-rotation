@@ -1,4 +1,4 @@
-import { Quaternion } from './Quaternion';
+import { Quaternion } from './Quaternion.js';
 export declare class Vector3 {
     x: number;
     y: number;

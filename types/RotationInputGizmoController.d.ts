@@ -1,7 +1,7 @@
 import { Controller, Value, ViewProps } from '@tweakpane/core';
-import { Rotation } from './Rotation';
-import { RotationInputGizmoView } from './RotationInputGizmoView';
-import type { RotationInputGizmoControllerConfig } from './RotationInputGizmoControllerConfig';
+import { Rotation } from './Rotation.js';
+import { RotationInputGizmoView } from './RotationInputGizmoView.js';
+import type { RotationInputGizmoControllerConfig } from './RotationInputGizmoControllerConfig.js';
 export declare class RotationInputGizmoController implements Controller<RotationInputGizmoView> {
     readonly value: Value<Rotation>;
     readonly view: RotationInputGizmoView;

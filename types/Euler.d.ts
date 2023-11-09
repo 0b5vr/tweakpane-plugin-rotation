@@ -1,7 +1,7 @@
-import { Quaternion } from './Quaternion';
-import { Rotation } from './Rotation';
-import type { EulerOrder } from './EulerOrder';
-import type { EulerUnit } from './EulerUnit';
+import { Quaternion } from './Quaternion.js';
+import { Rotation } from './Rotation.js';
+import type { EulerOrder } from './EulerOrder.js';
+import type { EulerUnit } from './EulerUnit.js';
 export declare class Euler extends Rotation {
     static fromQuaternion(quat: Quaternion, order: EulerOrder, unit: EulerUnit): Euler;
     x: number;

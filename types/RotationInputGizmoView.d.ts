@@ -1,6 +1,6 @@
 import { Value, View } from '@tweakpane/core';
-import type { Rotation } from './Rotation';
-import type { RotationInputGizmoViewConfig } from './RotationInputGizmoViewConfig';
+import type { Rotation } from './Rotation.js';
+import type { RotationInputGizmoViewConfig } from './RotationInputGizmoViewConfig.js';
 export declare class RotationInputGizmoView implements View {
     readonly element: HTMLElement;
     readonly padElement: HTMLDivElement;

@@ -1,6 +1,6 @@
-import { Vector3 } from './Vector3';
-import type { PointProjector } from './PointProjector';
-import type { Quaternion } from './Quaternion';
+import { Vector3 } from './Vector3.js';
+import type { PointProjector } from './PointProjector.js';
+import type { Quaternion } from './Quaternion.js';
 export declare class SVGLineStrip {
     element: SVGPathElement;
     vertices: Vector3[];

@@ -1,1 +1,1 @@
-export declare type RotationInputRotationMode = 'quaternion' | 'euler';
+export type RotationInputRotationMode = 'quaternion' | 'euler';
