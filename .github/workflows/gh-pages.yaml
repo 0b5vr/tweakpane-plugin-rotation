@@ -40,8 +40,6 @@ jobs:
         name: build
         path: |
           dist/
-          types/
-          ts*/
 
   pages:
     runs-on: ubuntu-latest
@@ -57,7 +55,7 @@ jobs:
         mkdir pages
 
         mv README.md pages
-        mv LICENSE pages
+        mv LICENSE.txt pages
         mv package.json pages
         mv index.html pages
 
