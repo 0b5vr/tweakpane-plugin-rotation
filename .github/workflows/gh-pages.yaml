@@ -10,60 +10,34 @@ defaults:
     shell: bash
 
 jobs:
-  fetch:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
-      with:
-        node-version: '16'
-        cache: 'yarn'
-    - name: Fetch Deps
-      run: yarn
-
   build:
     runs-on: ubuntu-latest
-    needs: fetch
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v2
       with:
         node-version: '16'
         cache: 'yarn'
-    - name: Fetch Deps
+    - name: Install + Prepare
       run: yarn
-    - name: Build
-      run: yarn build
+    - name: Organize pages stuff
+      run: |
+        mkdir _site
+        cp -r README.md LICENSE.txt package.json index.html dist _site
     - name: Upload Builds
-      uses: actions/upload-artifact@v2
-      with:
-        name: build
-        path: |
-          dist/
-          types/
-          ts*/
+      uses: actions/upload-pages-artifact@v2
 
   pages:
     runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/release' }}
     needs:
-      - build
+    - build
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/download-artifact@v2
-      with:
-        path: artifacts
-    - name: Setup Pages
-      run: |
-        mkdir pages
-
-        mv README.md pages
-        mv LICENSE pages
-        mv package.json pages
-        mv index.html pages
-
-        mv artifacts/build/* pages
-    - name: Publish gh-pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: pages
+    - name: Deploy to GitHub Pages
+      uses: actions/deploy-pages@v2
